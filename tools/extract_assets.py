@@ -16,8 +16,9 @@ sys.path.insert(0, os.path.dirname(__file__))
 from delphi_dfm import load_forms  # noqa: E402
 
 IMAGE_LISTS = ['StoneImageList', 'GameImageList', 'BackGndImageList', 'TextImageList']
-# Stone type n in a .lev cell is STONES[n - 1] (name table in the EXE @0x41782c).
-STONES = ['GemGreen', 'GemBlue', 'GemRed', 'GemOrange', 'GemViolet', 'Granit', 'Block', 'Bubbler', 'Eater',
+# Stone type n in a .lev cell is STONES[n - 1] (the case statement in TStone.Create @0x41739c; the string
+# literals before it are in a different order).
+STONES = ['GemRed', 'GemOrange', 'GemGreen', 'GemBlue', 'GemViolet', 'Granit', 'Block', 'Bubbler', 'Eater',
           'Doubler', 'BeBack', 'Goldie', 'Killer']
 ATTRIBUTES = ['ABonus', 'AMove', 'AHike', 'AIron']
 COLS, ROWS = 13, 17

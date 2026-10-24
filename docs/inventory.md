@@ -59,25 +59,24 @@ MultiDoh, Woohoo, Haahaa, IMean) are probably clips from *The Simpsons*; to be c
 
 All files above now live in `original_source/` (moved there on 2026-10-24, unchanged).
 
-## File formats (first pass, to be verified against the code)
-- **`.lev`** (443 bytes): 13 columns × 17 rows, stored **column by column**, 2 bytes per cell = (stone type,
-  attribute), then 1 byte background tile. Stone type 0 = empty, 1–13 in the order of the EXE's name table
-  (GemGreen, GemBlue, GemRed, GemOrange, GemViolet, Granit, Block, Bubbler, Eater, Doubler, BeBack, Goldie,
-  Killer). Attribute 0 = none, 1–4 = Bonus, Move, Hike, Iron. Verified by rendering all levels
-  (`tools/extract_assets.py`): Hi, Flower, Batman, Titanic etc. come out as their names say.
-- **`.cse`**: `u32` count, then `string[50]` file names (51 bytes each).
-- **`<course>scr`** (high scores): `u32` count, then 59-byte records: a `ShortString` "score␣␣␣name", …,
-  `i32` score, `i32` level. The 1998 files use 55-byte records (score at the end only).
+## File formats
+Level `.lev` (443 bytes, column-major grid of (kind, attribute) + background tile), course `.cse` and high
+scores `<course>scr`: verified against the code in session 2, see `docs/file-formats.md`. **Correction:** the
+first pass took the stone kind order from the string literals (GemGreen first); the code's case statement has
+kind 1 = GemRed, 2 GemOrange, 3 GemGreen, 4 GemBlue, 5 GemViolet. `tools/extract_assets.py` is fixed.
 
 ## Extraction tools
 - `tools/delphi_dfm.py`: parses Delphi binary form streams (TPF0) from the EXE's resources into a component tree.
 - `tools/extract_assets.py`: image lists → PNG, wave list → WAV, levels → PNG renders, plus `assets.json`
   (names, pattern sizes, transparency, level grids), into `original_source/extracted/` (local only).
+- RE tools (session 2): `tools/delphi_rtti.py` (classes, published methods, virtual overrides from the VMTs),
+  `tools/ghidra_dump.sh` + `tools/ghidra/DumpGame.java` (decompile the game units with Ghidra headless),
+  `tools/ghidra/consts.py` (x87 constants). See `docs/re-notes.md`.
 
 ## What we don't have
 - Source code (Delphi `.pas`/`.dfm`), DelphiX version used, the 3D scenes behind the graphics.
 - A way to watch the original here yet. Wine 9.0 is installed and starts the game, but the game switches to a
   fullscreen display mode, which Wine can't set on this multi-monitor desktop (`ChangeDisplaySettings` returns
   −2), and inside a Wine virtual desktop it quits. Next try: a virtual X server (Xvfb) at 640×480×16.
-- The rules: ball speed, angles, bonus effects, stone behaviours (Move, Hike, Eater, Doubler, BeBack, Bubbler,
-  Killer…), scoring, lives. All of that is in the ~53 game procedures.
+- ~~The rules~~: reverse-engineered in session 2, see `docs/gameplay-spec.md`. Still unchecked against the
+  running game.
