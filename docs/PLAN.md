@@ -99,8 +99,8 @@
   screen; `touch.ts` cancels `touchend` document-wide, except in the menus and dialogs (they need the click), as
   Dark Planet's fix. No sound on the iPhone: likely the silent switch, which mutes Web Audio in iOS's "ambient"
   session (Dark Planet escapes it through its music element); `sfx.ts` asks for `navigator.audioSession.type =
-  'playback'` (Safari 16.4+) and also resumes from iOS's "interrupted" state.
-- [ ] Check on the iPhone: no zoom on a double tap, sounds (with the silent switch on and off), menus still work.
+  'playback'` (Safari 16.4+) and also resumes from iOS's "interrupted" state. Confirmed on the iPhone: sounds
+  play, no zoom on a double tap (user).
 - [ ] Try the touch buttons on a phone; try a gamepad.
 - [ ] Open questions for the user: (1) mouse: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
