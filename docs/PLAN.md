@@ -77,9 +77,9 @@
 - [x] Input: the original keys, gamepad, mouse and touch (target steering at the paddle's 6 px/tick, see open
   question 1); F fullscreen, P pause, F2 new game. PWA: manifest, icons (`tools/export_icons.py`), service worker.
 - [x] `tools/screenshot.mjs`: dev server + headless Chrome, runs steps in the page and saves the picture or the window.
-- [ ] Deploy to GitHub Pages: `.github/workflows/deploy.yml` and `bin/deploy.sh` are ready (as Dark Planet: push
-  `main` to `production`). Needs the user: Pages source "GitHub Actions", the `github-pages` environment limited
-  to `production`, and the go-ahead to push.
+- [x] Deploy to GitHub Pages (session 3): https://aimfeld.github.io/wunioid/. Pages builds from GitHub Actions; the
+  `github-pages` environment only accepts `production`. `bin/deploy.sh` tests, builds and pushes `main` to
+  `production` (as Dark Planet).
 - [ ] Try it on a phone (touch, scaling) and with a gamepad.
 - [ ] Open questions for the user: (1) mouse/touch: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
