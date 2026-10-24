@@ -92,6 +92,9 @@
   screen and hourly, and reloads once a new version has taken over and the game has no progress (first level, score
   0, no dialog), at the latest when the next game starts. The touch fullscreen button is hidden in the installed app
   (fullscreen already). Checked against `vite preview` in headless Chrome.
+- [x] Manifest `id` `"./"` → `"/wunioid/"` (session 4): an `id` resolves against the start URL's *origin*, so
+  `"./"` was `https://aimfeld.github.io/`, the same as Dark Planet's; Android Chrome took Wunioid for the
+  installed Dark Planet ("already installed", then "Could not open app").
 - [ ] Try the touch buttons on a phone; try a gamepad.
 - [ ] Open questions for the user: (1) mouse: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
