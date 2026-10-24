@@ -18,7 +18,9 @@ the running game yet; §12 lists the checks.
 - `Random(n)`: Delphi's generator, 0…n−1. Exact sequences don't matter.
 - Order within a tick (O, TimerTimer + PlayTick): input → every sprite's DoMove in creation order (paddle
   before balls before stones, as created in StartLevel; capsules, shots, shatters later) → collisions (§6) →
-  remove dead sprites → ball/lives check → level-complete check → draw.
+  remove dead sprites → ball/lives check → level-complete check → draw. Sprites created during the moves move
+  from the next tick on; balls, shots and capsules leave their lists the moment they die, and the collision loops
+  then go on with whatever now has the same index (O, session 3, re-notes).
 
 ## 1. Playfield and grid
 - Walls: left x = 14, right x = 414, top y = 14. The bottom is open; a ball whose bottom edge passes y 500 is
@@ -28,7 +30,8 @@ the running game yet; §12 lists the checks.
 - Background: level byte 442 = tile 1–9 (`Tile1`…`Tile9`, 40×40) repeated 10×12 from 14, 14, drawn above the
   frame (Z 1 over Z 0); 0 = no tiles.
 - Draw order (Z): frame 0, background 1, paddle/balls/stones 2, capsules/shots/shatters/attribute labels 3,
-  text banners 20. Equal Z: creation order (I, DelphiX sorts by Z, stable insertion).
+  text banners 20. Equal Z: the newest underneath (O, session 3: DelphiX inserts a sprite before the others of its
+  Z), so the paddle and the level's first ball are drawn over the stones, later balls under them.
 
 ## 2. Paddle
 - Start of each level: a new paddle at X 200, Y 430, normal, all timers 0.
@@ -37,8 +40,10 @@ the running game yet; §12 lists the checks.
   1. Shot cooldown −1 (if > 0). Gun timer −1 (if > 0); reaching 0 makes the paddle normal. Glue timer −1
      (if > 0).
   2. Left held and X > 14: X −= 6 and every glued ball moves 6 left. Right held and X + W < 414: X += 6,
-     glued balls too. (Both can apply in one tick and cancel out.) The paddle can end slightly past a wall:
-     X min ≈ 8.something, X + W max up to 420 (I, from the check-then-move).
+     glued balls too. (Both can apply in one tick and cancel out.) X is always 200 + 6k, so the paddle stops at
+     exactly X 14 on the left, but on the right ends past the wall at X + W = 418 (normal, gun), 416 (long) or
+     414 (short). SetKind doesn't clamp: Pad+ at the right wall reaches X + W = 458 (I, session 3; this replaces
+     "X min ≈ 8").
   3. Up or Fire held: every glued ball is released with angle = clamp(90 + offset, 20, 160) (§3.3).
   4. Fire held, gun timer > 0, cooldown 0, kind gun: two shots (§7), cooldown 15, sound `Shoot`.
 - Losing a ball (§9) makes the paddle normal but keeps its position, and keeps a running glue timer.
@@ -230,17 +235,20 @@ they hit a visible stone (the stone takes a hit without a ball: no Eater/Doubler
   to the editor, game over restarts it.
 - **Pause** stops the timer (no ticks, no drawing).
 - Banners: X = 214 − W div 2, Y 120, 8 frames looping at 0.4 frames/tick. A new non-blocking banner replaces the
-  current one.
+  current one. A blocking banner of n ticks runs n − 1 iterations in which only it moves; it then disappears on
+  the next normal tick.
 - **I:** blocking banners and the "Well done" phase ran at the display refresh rate in the original. The remake
   runs them at the tick rate (decision 7, `docs/PLAN.md`).
 
 ## 10. High scores
-Per course, up to 10 entries (score, name, level index). A score qualifies with fewer than 10 entries or when
-it beats the 10th. The game switches to a window, shows the course editor and asks "`n`. place / Please enter
-your name (No blanks!)"; the entry goes before the first lower score. Course "NoName" (unsaved) keeps none.
+Per course, up to 10 entries (score, name, level index). A score qualifies with fewer than 10 entries (any
+score, even 0; both shipped tables have 9) or when it beats the 10th. The game switches to a window, shows the
+course editor and asks "`n`. place / Please enter your name (No blanks!)"; the entry goes before the first lower
+score. Course "NoName" (unsaved) keeps none. Closing the course editor starts a new game.
 File format in `docs/file-formats.md`.
 
 ## 11. Sounds (WaveList names)
+Each PlaySound starts the wave once; a sound already playing isn't cut off but overlaps (MaxPlayingCount 0, O).
 `Shoot` fire · `PaddleBall`/`PaddleBall2` paddle · `Abprall` stone hit, not destroyed · `Iron` Iron stone hit ·
 `Klirr` stone shatters · `Crunch` Granit/Block shatters · `Bonus` Bonus stone destroyed · `Eat` Eater ·
 `Double` Doubler · `BeBack` BeBack returns · `Money` money capsule · `Woohoo` 1Up and level complete ·

@@ -362,6 +362,63 @@ with speed < 6 adds 0.5 to the speed (constants 6 @0x419370, 0.5 @0x419374).
   missing.
 - See `docs/file-formats.md`.
 
+## Findings while porting (session 3, 2026-10-24)
+Read again in `game.txt`/`game_c.txt` and the DelphiX dumps (`dxsprite.txt`, `dxwave.txt` from
+`tools/ghidra_dump.sh 0x416100 0x416300 dxwave`) while writing `game/src/sim/`.
+
+- **Observed, draw order** (TSprite.AddDrawList 0x40e5f8, SetZ 0x40e888): the draw list is kept sorted by Z with a
+  binary search that inserts a sprite *before* the sprites of equal Z. SetZ re-inserts only when Z changes. Every
+  game sprite gets its Z right after creation, so among equal Z the newest is drawn first (underneath): the paddle
+  and the level's first ball are drawn over the stones, balls created later under them. This corrects the spec's
+  "creation order (I)".
+- **Observed, move order** (TSprite.Move 0x40e6ac): DoMove, then the children with the count taken before the
+  loop: sprites created during SpriteEngine.Move move from the next tick on. Dead sprites stay in the engine (and
+  keep moving) until SpriteEngine.Dead (0x40f684) frees them after Collisions.
+- **Observed, lists**: a ball, shot or capsule that dies is taken out of its TList at once (`TList.Remove` in
+  TBall.DoMove, TStone.Hit for the Eater, TShot.DoMove/HitStone, TBonus.DoMove/Collect). The ball–stone and
+  shot–stone loops of Collisions re-check `index ≤ Count − 1` for each stone, so after a removal the inner loop
+  goes on with whatever object now has that index (one that was already processed this tick). The port keeps this.
+- **Observed** (Collisions 0x41a0f8–0x41a162): the paddle bounce is Reflect(0), then `angle := NormAngle(angle)`,
+  then `angle := NormAngle(angle) + BallOffset`. The NormAngle matters: a ball coming down at a has −a ≤ 0, and
+  Reflect leaves 1440 − a. (`docs/gameplay-spec.md` §6 wrote NormAngle(Reflect(0)); same result.)
+- **Observed** (TBall.BounceOffStone 0x418e14): the whole procedure, including `Hit` and the Bubbler speed-up, is
+  skipped when the ball has bounced this tick (and IsClass(TStone) holds).
+- **Observed** (TStone.Hit 0x417ff8): the "counts" test on destruction is made on the grid cell's stone
+  (`Counts(grid[col][row])`), which is the stone itself. A Hike copy isn't counted at creation but is uncounted when
+  destroyed; the original stone was counted once and isn't uncounted when it hikes, so the total stays right.
+- **Observed** (TStone.Goldify 0x417dec): a Hike neighbour loses its attribute (stops hiking); a hidden BeBack
+  becomes a visible Goldie; Goldies around are converted again (no change).
+- **Observed** (TTextSprite.Create 0x419eac, blocking): `repeat n := n − 1; DoMove(20); SpriteEngine.Dead;
+  DrawFrame until n = 1`: ticks − 1 iterations. The banner's counter is then 1; it dies on the next normal tick.
+- **Observed** (TDXWaveList items in TFORM1): `MaxPlayingCount` 0 for all 19 waves. TWaveCollectionItem.Play
+  (0x416198) reuses a buffer that isn't playing, else creates a new one when MaxPlayingCount is 0 (or below the
+  limit): the same sound overlaps itself without limit. `Looped` False for all.
+- **Observed, menus** (handlers in game_c.txt): Game ▸ New (Neu1Click 0x41b7b4) requests state 1. Level ▸ New
+  (New1Click 0x41b7ec) clears the level buffer and its tile, then state 3; Level ▸ Edit (Create1Click 0x41bba4)
+  state 3; Level ▸ Test (Test1Click 0x41bb9c) state 2 with the level in the buffer (after a course level, that
+  level). Course ▸ Load (Load2Click 0x41bbb4) goes windowed, runs the course editor's open dialog
+  (TCourseEditor 0x41d170), goes fullscreen and requests state 1. Course ▸ Editor (Editor1Click 0x41bbac) state 4.
+  No menu item has a shortcut (TFORM1 form data).
+- **Observed** (CourseEditorTick 0x41a9dc, FormClose 0x41cdb4): in state 4 a new game is requested as soon as the
+  course editor isn't visible any more; closing it shows Form1 and goes fullscreen.
+- **Observed** (IsHighScore 0x41ca28): `if Count = 10 then last.Score < score else True`. With fewer than 10
+  entries every score qualifies, even 0. Both shipped tables (2011) have 9 entries.
+- **Observed, positions**: TBackgroundSprite at X 14, Y 14 (doubles at +0x1c, +0x24 = 0x402c… = 14.0; CreateBackground
+  0x41aed0); text banners at Y 120.0 (0x405e0000); the editor's Creator palette at 460, 50 (StartEditor 0x41a940);
+  the editor's attribute labels at the stone's X + 15, Y + 7 (TStone.Create; constants K15, K7 by the dump's
+  naming, not checked).
+- **Inferred, paddle limits**: the paddle starts at X 200 and moves exactly 6 px (0.3 × 20), so X is always
+  200 + 6k. On the left it stops at exactly 14 (200 − 31 × 6). On the right the test is `X + W < 414` before the
+  step, so it ends at X + W = 418 (normal and gun), 416 (long) or 414 (short). SetKind doesn't clamp: taking Pad+
+  at the right wall leaves the long paddle reaching X + W = 458, past the frame (428). This corrects the spec's
+  "X min ≈ 8".
+- **Inferred, colour key**: DelphiX compares pixels after the image was converted to the 16-bit display surface, so
+  a pixel is transparent when its 16-bit value equals the key colour's. With RGB 5:6:5 (the usual 16-bit format;
+  5:5:5 cards existed) this makes a few near-black pixels transparent: 9–35 per paddle image, 4 in Granit
+  (`tools/export_game_data.py`). The Shot's key is $00A4A0A0 (RGB 160, 160, 164), its grey border.
+- **Inferred**: `System._Ext2Real` rounds; the port rounds the ball's speed and direction to the Real's 39
+  fraction bits, half away from zero. The exact mode can't matter at this precision.
+
 ## Open questions
 - **Unknown:** the editor (DrawMouseDown 0x41aad4, palette `Creator` at 460, 50) is only partly read; it's
   needed in Phase 4.

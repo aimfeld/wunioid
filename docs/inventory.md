@@ -73,6 +73,15 @@ kind 1 = GemRed, 2 GemOrange, 3 GemGreen, 4 GemBlue, 5 GemViolet. `tools/extract
   `tools/ghidra_dump.sh` + `tools/ghidra/DumpGame.java` (decompile the game units with Ghidra headless),
   `tools/ghidra/consts.py` (x87 constants). See `docs/re-notes.md`.
 
+## The remake (session 3)
+- `game/`: the browser game (Vite + TypeScript + PixiJS + Vitest). `npm run dev`, `npm test`, `npm run build`;
+  `npm run data` re-exports `game/public/data/`. Simulation in `src/sim/`, Classic renderer in `src/render/`.
+- `tools/export_game_data.py`: the EXE's image and wave lists, the levels, courses and high scores →
+  `game/public/data/` (PNG with alpha, WAV, raw files, `data.json`). `tools/export_icons.py`: the app icons.
+- `tools/screenshot.mjs`: the dev server and headless Chrome; runs steps in the page and saves the picture or
+  the window (checking the game without a display).
+- `bin/deploy.sh` and `.github/workflows/deploy.yml`: GitHub Pages, as for Dark Planet.
+
 ## What we don't have
 - Source code (Delphi `.pas`/`.dfm`), DelphiX version used, the 3D scenes behind the graphics.
 - A way to watch the original here yet. Wine 9.0 is installed and starts the game, but the game switches to a

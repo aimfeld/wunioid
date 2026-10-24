@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <title>Wunioid</title>
+    <meta name="apple-mobile-web-app-title" content="Wunioid" />
+    <link rel="icon" href="icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="description" content="Wunioid (1999), a brick breaker for Windows in the spirit of Arkanoid, restored for the browser." />
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; overscroll-behavior: none;
+        touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+      #app { width: 100%; height: 100%; }
+      #status { position: fixed; left: 8px; bottom: 6px; color: #888; font: 12px monospace; }
+
+      /* Windows 98 look for the menus and dialogs (MS Sans Serif 8 pt) */
+      .menubar, .window { font: 11px "MS Sans Serif", "Microsoft Sans Serif", Tahoma, Arial, sans-serif; color: #000; }
+      .menubar { position: fixed; top: 0; left: 0; z-index: 10; display: flex; background: #c0c0c0;
+        border-bottom: 1px solid #808080; opacity: 0.25; transition: opacity 0.2s; }
+      .menubar:hover, .menubar:focus-within, .menubar:has(.open) { opacity: 1; }
+      .window .menubar { position: static; opacity: 1; margin: -6px -8px 8px; border-bottom: 1px solid #fff; }
+      .menu { position: relative; }
+      .menu-title { display: block; padding: 3px 7px; cursor: default; }
+      .menu.open .menu-title, .menu-title:hover { background: #000080; color: #fff; }
+      .menu-items { display: none; position: absolute; left: 0; top: 100%; min-width: 120px; background: #c0c0c0;
+        border: 2px outset #fff; padding: 2px; z-index: 11; }
+      .menu.open .menu-items { display: block; }
+      .menu-item { display: flex; padding: 3px 18px 3px 2px; white-space: nowrap; cursor: default; }
+      .menu-item .check { width: 16px; text-align: center; }
+      .menu-item:hover { background: #000080; color: #fff; }
+      .menu-item.disabled { color: #808080; text-shadow: 1px 1px #fff; }
+      .menu-item.disabled:hover { background: transparent; color: #808080; }
+
+      .backdrop { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; }
+      .window { background: #c0c0c0; border: 2px outset #fff; padding: 2px; min-width: 260px; max-width: calc(100vw - 32px);
+        box-shadow: 1px 1px 0 #000; }
+      .titlebar { background: linear-gradient(90deg, #000080, #1084d0); color: #fff; font-weight: bold; padding: 3px 4px; }
+      .window-body { padding: 6px 8px 8px; }
+      .window input { width: 100%; box-sizing: border-box; font: inherit; border: 2px inset #fff; padding: 2px; margin: 4px 0; }
+      .prompt { margin: 4px 0; }
+      .buttons { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+      .window button { font: inherit; min-width: 75px; height: 23px; background: #c0c0c0; border: 2px outset #fff; }
+      .window button:active:not(:disabled) { border-style: inset; }
+      .window button:disabled { color: #808080; text-shadow: 1px 1px #fff; }
+      .list { width: 100%; font: inherit; border: 2px inset #fff; background: #fff; }
+      .course-editor { width: 520px; }
+      .course-name { font-size: 16px; margin: 0 8px 8px; }
+      .editor-grid { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 8px; align-items: start; }
+      .editor-grid fieldset { border: 2px groove #fff; margin: 0; padding: 4px 6px 6px; min-width: 0; }
+      .editor-buttons { display: flex; flex-direction: column; gap: 7px; padding-top: 20px; }
+      .info .window-body { text-align: center; padding: 12px 24px; }
+      .info-title { font-size: 19px; margin-bottom: 20px; }
+      .info-line { font-size: 16px; margin: 4px 0; }
+      .info-small { margin-top: 24px; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="status"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,522 @@
+{
+ "images": {
+  "GemGreen": {
+   "file": "GemGreen.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 11
+  },
+  "GemBlue": {
+   "file": "GemBlue.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 11
+  },
+  "GemRed": {
+   "file": "GemRed.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 11
+  },
+  "GemOrange": {
+   "file": "GemOrange.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 11
+  },
+  "GemViolet": {
+   "file": "GemViolet.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 11
+  },
+  "Granit": {
+   "file": "Granit.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 1
+  },
+  "Block": {
+   "file": "Block.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 1
+  },
+  "BeBack": {
+   "file": "BeBack.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 1
+  },
+  "Bubbler": {
+   "file": "Bubbler.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 11
+  },
+  "Eater": {
+   "file": "Eater.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 10
+  },
+  "Doubler": {
+   "file": "Doubler.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 10
+  },
+  "Goldie": {
+   "file": "Goldie.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 1
+  },
+  "Killer": {
+   "file": "Killer.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 10
+  },
+  "B$Red": {
+   "file": "BSRed.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "B1Up": {
+   "file": "B1Up.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "BGun": {
+   "file": "BGun.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "B$Green": {
+   "file": "BSGreen.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "BGlue": {
+   "file": "BGlue.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "BPad+": {
+   "file": "BPadPlus.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "BPad-": {
+   "file": "BPadMinus.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "B$Blue": {
+   "file": "BSBlue.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "B2xo": {
+   "file": "B2xo.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "B5xo": {
+   "file": "B5xo.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "B--o": {
+   "file": "BMinusMinuso.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "B$Orange": {
+   "file": "BSOrange.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "BBig": {
+   "file": "BBig.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "B$Violet": {
+   "file": "BSViolet.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "BZup": {
+   "file": "BZup.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "BEnd": {
+   "file": "BEnd.png",
+   "list": "StoneImageList",
+   "width": 30,
+   "height": 20,
+   "frames": 19
+  },
+  "ZGemRed": {
+   "file": "ZGemRed.png",
+   "list": "StoneImageList",
+   "width": 60,
+   "height": 40,
+   "frames": 9
+  },
+  "ZGemGreen": {
+   "file": "ZGemGreen.png",
+   "list": "StoneImageList",
+   "width": 60,
+   "height": 40,
+   "frames": 9
+  },
+  "ZGemBlue": {
+   "file": "ZGemBlue.png",
+   "list": "StoneImageList",
+   "width": 60,
+   "height": 40,
+   "frames": 9
+  },
+  "ZGemOrange": {
+   "file": "ZGemOrange.png",
+   "list": "StoneImageList",
+   "width": 60,
+   "height": 40,
+   "frames": 9
+  },
+  "ZGemViolet": {
+   "file": "ZGemViolet.png",
+   "list": "StoneImageList",
+   "width": 60,
+   "height": 40,
+   "frames": 9
+  },
+  "ZBlock": {
+   "file": "ZBlock.png",
+   "list": "StoneImageList",
+   "width": 60,
+   "height": 40,
+   "frames": 9
+  },
+  "ZGranit": {
+   "file": "ZGranit.png",
+   "list": "StoneImageList",
+   "width": 60,
+   "height": 40,
+   "frames": 9
+  },
+  "Paddle": {
+   "file": "Paddle.png",
+   "list": "GameImageList",
+   "width": 80,
+   "height": 14,
+   "frames": 1
+  },
+  "PaddleLong": {
+   "file": "PaddleLong.png",
+   "list": "GameImageList",
+   "width": 120,
+   "height": 14,
+   "frames": 1
+  },
+  "PaddleShort": {
+   "file": "PaddleShort.png",
+   "list": "GameImageList",
+   "width": 40,
+   "height": 14,
+   "frames": 1
+  },
+  "PaddleGun": {
+   "file": "PaddleGun.png",
+   "list": "GameImageList",
+   "width": 80,
+   "height": 14,
+   "frames": 1
+  },
+  "Ball": {
+   "file": "Ball.png",
+   "list": "GameImageList",
+   "width": 12,
+   "height": 12,
+   "frames": 21
+  },
+  "MegaBall": {
+   "file": "MegaBall.png",
+   "list": "GameImageList",
+   "width": 20,
+   "height": 20,
+   "frames": 20
+  },
+  "Shot": {
+   "file": "Shot.png",
+   "list": "GameImageList",
+   "width": 5,
+   "height": 20,
+   "frames": 1
+  },
+  "Creator": {
+   "file": "Creator.png",
+   "list": "GameImageList",
+   "width": 137,
+   "height": 387,
+   "frames": 1
+  },
+  "ABonus": {
+   "file": "ABonus.png",
+   "list": "GameImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 1
+  },
+  "AMove": {
+   "file": "AMove.png",
+   "list": "GameImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 1
+  },
+  "AHike": {
+   "file": "AHike.png",
+   "list": "GameImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 1
+  },
+  "AIron": {
+   "file": "AIron.png",
+   "list": "GameImageList",
+   "width": 30,
+   "height": 15,
+   "frames": 1
+  },
+  "Rahmen": {
+   "file": "Rahmen.png",
+   "list": "BackGndImageList",
+   "width": 428,
+   "height": 480,
+   "frames": 1
+  },
+  "Tile1": {
+   "file": "Tile1.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "Tile2": {
+   "file": "Tile2.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "Tile3": {
+   "file": "Tile3.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "Tile4": {
+   "file": "Tile4.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "Tile5": {
+   "file": "Tile5.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "Tile6": {
+   "file": "Tile6.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "Tile7": {
+   "file": "Tile7.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "Tile8": {
+   "file": "Tile8.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "Tile9": {
+   "file": "Tile9.png",
+   "list": "BackGndImageList",
+   "width": 40,
+   "height": 40,
+   "frames": 1
+  },
+  "GameOver": {
+   "file": "GameOver.png",
+   "list": "TextImageList",
+   "width": 290,
+   "height": 50,
+   "frames": 8
+  },
+  "DOh": {
+   "file": "DOh.png",
+   "list": "TextImageList",
+   "width": 120,
+   "height": 50,
+   "frames": 8
+  },
+  "Shootem": {
+   "file": "Shootem.png",
+   "list": "TextImageList",
+   "width": 270,
+   "height": 50,
+   "frames": 8
+  },
+  "1up": {
+   "file": "1up.png",
+   "list": "TextImageList",
+   "width": 100,
+   "height": 50,
+   "frames": 8
+  },
+  "Welldone": {
+   "file": "Welldone.png",
+   "list": "TextImageList",
+   "width": 240,
+   "height": 50,
+   "frames": 8
+  },
+  "Letsgo": {
+   "file": "Letsgo.png",
+   "list": "TextImageList",
+   "width": 240,
+   "height": 70,
+   "frames": 8
+  },
+  "CourseDone": {
+   "file": "CourseDone.png",
+   "list": "TextImageList",
+   "width": 340,
+   "height": 50,
+   "frames": 8
+  }
+ },
+ "sounds": [
+  "Signal",
+  "PaddleBall",
+  "PaddleBall2",
+  "StoneHit1",
+  "Bonus",
+  "Klirr",
+  "Doh",
+  "MultiDoh",
+  "Woohoo",
+  "Money",
+  "Shoot",
+  "Abprall",
+  "Crunch",
+  "Eat",
+  "Double",
+  "BeBack",
+  "IMean",
+  "Iron",
+  "Haahaa"
+ ],
+ "levels": [
+  "Accelerator.lev",
+  "AppleTree.lev",
+  "Baloon.lev",
+  "Batman.lev",
+  "Bottle.lev",
+  "Camel.lev",
+  "Chainreaction.lev",
+  "Clock.lev",
+  "Clouds.lev",
+  "Columns.lev",
+  "CrackLaby.lev",
+  "Crown.lev",
+  "Flower.lev",
+  "Getlifes.lev",
+  "GoldSaver.lev",
+  "GoodVsEvil.lev",
+  "Gral.lev",
+  "Hi.lev",
+  "IceCream.lev",
+  "Mystery.lev",
+  "OpenBox.lev",
+  "Penatgramm.lev",
+  "Picture.lev",
+  "Rainbow.lev",
+  "Skater.lev",
+  "Slug.lev",
+  "Superman.lev",
+  "test.lev",
+  "Titanic.lev",
+  "treasure.lev",
+  "U.lev",
+  "UglyDoor.lev"
+ ],
+ "courses": [
+  "default.cse",
+  "Mystery.cse"
+ ],
+ "scores": [
+  "defaultscr",
+  "Mysteryscr"
+ ]
+}

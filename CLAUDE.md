@@ -35,6 +35,11 @@ Update them at the end of each piece of work, not only at session end.
   are refcounted with a -8 header; string literals sit just before the procedure that uses them.
 - `TFORM1` (RCDATA) holds all graphics and sounds as DelphiX image/wave lists: `tools/extract_assets.py`.
 
+## The remake (`game/`)
+- Dark Planet's stack and layout. `src/sim/` is a procedure-by-procedure port: keep each function's original
+  address in its doc comment and the original's order of operations, quirks included (list indexing, NormAngle).
+- Check changes with `npm test` and, for the picture, `node tools/screenshot.mjs <dir> [steps]` (headless Chrome).
+
 ## Running the original
 - Wine 9.0, prefix `~/.local/share/wineprefixes/wunioid`. The game switches to a fullscreen mode; Wine can't do
   that on the user's multi-monitor desktop and the game quits inside a Wine virtual desktop. A virtual X server

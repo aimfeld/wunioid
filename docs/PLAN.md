@@ -58,15 +58,32 @@
 - [x] Decided (user, session 2): fixed tick 1000/22 ≈ 45.45 Hz; blocking banners and the "Well done" phase
   run at the tick rate too (decisions 6 and 7).
 - [ ] Check the spec against the original running in Wine (played by the user): `FPS:` value, `Level: 0` on the
-  first level, the ball after piercing ends, Hike/Move/Goldie behaviour, the 170°–190° angle guard.
+  first level, the ball after piercing ends, Hike/Move/Goldie behaviour, the 170°–190° angle guard. The remake can
+  now be played side by side for this.
 
-### Phase 2: Engine + Classic mode
-- [ ] Scaffold `game/` (Vite + TypeScript + PixiJS + Vitest), asset export into `game/public/`, fixed-tick loop.
-- [ ] Deterministic simulation ported from the original, with tests.
-- [ ] Classic renderer, HUD, text banners, sounds.
-- [ ] Courses (default, Mystery), high scores in `localStorage`.
-- [ ] Keyboard, mouse, touch, gamepad; fullscreen; PWA.
-- [ ] Deploy to GitHub Pages.
+### Phase 2: Engine + Classic mode 🔄 (session 3, 2026-10-24)
+- [x] Scaffold `game/` (Vite + TypeScript + PixiJS + Vitest, Dark Planet's versions). `tools/export_game_data.py`
+  → `game/public/data/` (PNG with alpha from the 16-bit colour key, the WAVs, the raw `.lev`/`.cse`/`scr` files,
+  `data.json`; committed like Dark Planet's data). Fixed 22 ms tick in `src/main.ts`.
+- [x] Simulation `src/sim/`: a procedure-by-procedure port (`sprites.ts` = TPaddle/TBall/TStone/…, `world.ts` =
+  TForm1: engine list, grid, Collisions, PlayTick, states). Delphi Random, 6-byte Real, Round half-even, NormAngle.
+  PlayTick is a generator: the blocking banners and "Well done" run one loop iteration per tick (decision 7).
+  31 tests (`npm test`), including an autopilot run through the default course.
+- [x] Classic renderer `src/render/classicView.ts` (640×480 canvas drawn like DelphiX, PixiJS integer scale), HUD,
+  banners; sounds `src/audio/sfx.ts` (each play a new voice, as the original).
+- [x] Courses and high scores: course game, Game ▸ New / Pause, Level ▸ Test, Course ▸ Load / Editor, the name
+  prompt and the course editor dialog (view only; its editing is Phase 4). High scores in `localStorage`, starting
+  from the 2011 tables.
+- [x] Input: the original keys, gamepad, mouse and touch (target steering at the paddle's 6 px/tick, see open
+  question 1); F fullscreen, P pause, F2 new game. PWA: manifest, icons (`tools/export_icons.py`), service worker.
+- [x] `tools/screenshot.mjs`: dev server + headless Chrome, runs steps in the page and saves the picture or the window.
+- [ ] Deploy to GitHub Pages: `.github/workflows/deploy.yml` and `bin/deploy.sh` are ready (as Dark Planet: push
+  `main` to `production`). Needs the user: Pages source "GitHub Actions", the `github-pages` environment limited
+  to `production`, and the go-ahead to push.
+- [ ] Try it on a phone (touch, scaling) and with a gamepad.
+- [ ] Open questions for the user: (1) mouse/touch: steer at the paddle's own speed (now) or move the paddle
+  straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
+  (3) the HUD font (MS Sans Serif 12 pt is approximated with Arial).
 
 ### Phase 3: Remastered mode
 - [ ] Graphics: choose between upscaling (hq2x/xBR/AI) and re-rendering the stones, balls and paddles.
