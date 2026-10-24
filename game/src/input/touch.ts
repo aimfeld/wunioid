@@ -30,15 +30,17 @@ export interface TouchLayout {
   right: Rect; // ▶
   fire: Rect;
   fullscreen: Rect;
+  /** The Remastered menu (pause): beside the fullscreen button. */
+  menu: Rect;
 }
 
 const W = 640;
 const H = 480;
-/** In portrait: the playfield (ClassicView's FIELD_W) under the HUD strip (STRIP_H). */
+/** In portrait: the playfield (ClassicView's FIELD_W) under the HUD strip (`strip` px: Classic 24, Remastered 34). */
 const PW = 428;
-const PH = 480 + 24;
 
-export function touchLayout(vw: number, vh: number, inset: Insets): TouchLayout {
+export function touchLayout(vw: number, vh: number, inset: Insets, strip = 24): TouchLayout {
+  const PH = 480 + strip;
   const unit = Math.round(Math.max(36, Math.min(60, Math.min(vw, vh) * 0.12)));
   const m = Math.round(unit * 0.25);
   const b = Math.round(unit * 1.5); // the button size
@@ -52,16 +54,21 @@ export function touchLayout(vw: number, vh: number, inset: Insets): TouchLayout 
   const y = vh - inset.b - m - b;
   const left = { x: inset.l + m, y, w: b, h: b };
   const fire = { x: vw - inset.r - m - b, y, w: b, h: b };
+  // landscape: fullscreen above Fire in the top corner, the menu above the arrows; portrait: both between the
+  // arrows and Fire
+  const mid = Math.round((left.x + 2 * b + m + fire.x) / 2);
   return {
     game,
     portrait: !landscape,
     left,
     right: { ...left, x: left.x + b + m },
     fire,
-    // landscape: above Fire in the top corner; portrait: between the arrows and Fire
     fullscreen: landscape
       ? { x: fire.x + (b - unit) / 2, y: inset.t + m, w: unit, h: unit }
-      : { x: Math.round((left.x + 2 * b + m + fire.x - unit) / 2), y: y + (b - unit) / 2, w: unit, h: unit },
+      : { x: mid + Math.round(m / 2), y: y + (b - unit) / 2, w: unit, h: unit },
+    menu: landscape
+      ? { x: left.x + (b - unit) / 2, y: inset.t + m, w: unit, h: unit }
+      : { x: mid - Math.round(m / 2) - unit, y: y + (b - unit) / 2, w: unit, h: unit },
   };
 }
 
@@ -84,6 +91,9 @@ export class TouchControls {
   private readonly right = this.button('▶');
   private readonly fire = this.button('Fire');
   private readonly fullscreen = this.button('⛶');
+  private readonly menu = this.button('☰');
+  /** Called by the menu button; none: the button is hidden (Classic). */
+  onMenu: (() => void) | null = null;
   private layoutNow: TouchLayout | null = null;
   private playing = false;
   private readonly holds = new Map<number, Dir | 'fire'>(); // by pointerId
@@ -102,6 +112,10 @@ export class TouchControls {
         onFullscreen();
       });
     } else this.fullscreen.remove(); // iPhone Safari, the installed app
+    this.menu.addEventListener('pointerup', (e) => {
+      e.stopPropagation();
+      this.onMenu?.();
+    });
     parent.appendChild(this.root);
     this.root.addEventListener('pointerdown', (e) => this.press(e));
     this.root.addEventListener('pointermove', (e) => this.move(e));
@@ -112,7 +126,7 @@ export class TouchControls {
     // touchend stops the zoom; the game reads pointer events, but the menus and dialogs need the click it
     // synthesises, so they keep it.
     document.addEventListener('touchend', (e) => {
-      if (!(e.target instanceof Element && e.target.closest('.menubar, .backdrop'))) e.preventDefault();
+      if (!(e.target instanceof Element && e.target.closest('.menubar, .backdrop, .wmenu'))) e.preventDefault();
     }, { passive: false });
     window.addEventListener('blur', () => this.holds.clear());
   }
@@ -141,6 +155,9 @@ export class TouchControls {
     put(this.right, layout.right);
     put(this.fire, layout.fire);
     put(this.fullscreen, layout.fullscreen);
+    put(this.menu, layout.menu);
+    this.menu.hidden = !this.onMenu || !playing;
+    this.menu.style.fontSize = `${Math.round(layout.menu.w * 0.45)}px`;
     this.left.style.fontSize = this.right.style.fontSize = `${Math.round(layout.left.w * 0.4)}px`;
     this.fire.style.fontSize = `${Math.round(layout.fire.w * 0.26)}px`;
     this.fullscreen.style.fontSize = `${Math.round(layout.fullscreen.w * 0.45)}px`;
@@ -172,7 +189,7 @@ export class TouchControls {
 
   private press(e: PointerEvent): void {
     // a mouse click goes on to the game (main.ts hides the controls), the fullscreen button handles its own
-    if (!this.playing || e.pointerType === 'mouse' || e.target === this.fullscreen) return;
+    if (!this.playing || e.pointerType === 'mouse' || e.target === this.fullscreen || e.target === this.menu) return;
     e.preventDefault();
     this.root.setPointerCapture(e.pointerId);
     const id = this.at(e.clientX);

@@ -4,7 +4,7 @@
 // In a portrait window on a phone (the remake, user) it shows only the playfield, under a strip with the HUD (no
 // FPS), so the playfield can take the full width.
 
-import { Application, Rectangle, Sprite as PixiSprite, Texture } from 'pixi.js';
+import { Application, Container, Rectangle, Sprite as PixiSprite, Texture } from 'pixi.js';
 import type { Manifest } from '../data';
 import type { Rect } from '../input/touch';
 import { Tiles } from '../sim/sprites';
@@ -67,10 +67,11 @@ export class ClassicView {
   private readonly stripTexture: Texture;
   private readonly stripSprite: PixiSprite;
   private readonly hud = [new TextLine(), new TextLine(), new TextLine(), new TextLine()];
+  private readonly root = new Container();
   private area: Rect | null = null;
   private strip = false;
 
-  private constructor(private readonly app: Application, private readonly images: Images, private readonly manifest: Manifest) {
+  constructor(private readonly app: Application, private readonly images: Images, private readonly manifest: Manifest) {
     this.canvas.width = W;
     this.canvas.height = H;
     this.ctx = this.canvas.getContext('2d')!;
@@ -86,22 +87,18 @@ export class ClassicView {
     this.stripTexture.source.scaleMode = 'nearest';
     this.stripSprite = new PixiSprite(this.stripTexture);
     this.stripSprite.visible = false;
-    app.stage.addChild(this.sprite, this.stripSprite);
+    this.root.addChild(this.sprite, this.stripSprite);
+    app.stage.addChild(this.root);
     window.addEventListener('resize', () => this.layout());
     this.layout();
   }
 
-  static async create(parent: HTMLElement, images: Images, manifest: Manifest): Promise<ClassicView> {
-    const app = new Application();
-    // autoStart off: the game loop renders once per animation frame, after the ticks
-    await app.init({ resizeTo: window, background: '#000000', antialias: false, autoDensity: true,
-      resolution: window.devicePixelRatio || 1, autoStart: false });
-    parent.appendChild(app.canvas);
-    return new ClassicView(app, images, manifest);
-  }
-
   get element(): HTMLCanvasElement {
     return this.app.canvas;
+  }
+
+  set visible(on: boolean) {
+    this.root.visible = on;
   }
 
   /**

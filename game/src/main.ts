@@ -1,16 +1,24 @@
-// Boot: load the data, run the fixed-tick loop (TForm1.TimerTimer) and draw the Classic picture.
+// Boot: load the data, run the fixed-tick loop (TForm1.TimerTimer) and draw the picture: Remastered (the default,
+// with its own menus) or Classic (the original's picture, menu bar and dialogs), switchable at any time (R).
 
 import { Sfx } from './audio/sfx';
 import { loadGameData } from './data';
+import { FrameClock } from './frameClock';
 import { toggleFullscreen } from './input/fullscreen';
 import { Gamepad } from './input/gamepad';
 import { Keyboard } from './input/keyboard';
 import { Mouse } from './input/mouse';
 import { TouchControls, touchLayout, type Insets, type TouchLayout } from './input/touch';
-import { ClassicView, loadImages } from './render/classicView';
+import { createApp } from './render/app';
+import { ClassicView, loadImages, STRIP_H as CLASSIC_STRIP } from './render/classicView';
+import { RemasterAssets } from './render/remastered/assets';
+import { STRIP_H as REMASTERED_STRIP } from './render/remastered/hud';
+import { RemasteredView } from './render/remasteredView';
+import { loadSettings, saveSettings } from './settings';
 import { highScoreFile, parseHighScores, writeHighScores, type HighScore } from './sim/files';
 import { GameState, World, type Input } from './sim/world';
 import { chooseCourse, courseEditor, inputBox, menuBar } from './ui/dialogs';
+import { Menu } from './ui/menu';
 
 const TICK_MS = 22; // decision 6: the DXTimer's interval, 1000/22 ≈ 45.45 ticks per second
 const MAX_TICKS_PER_FRAME = 8; // after a stall, catch up at most this much
@@ -108,15 +116,15 @@ async function touchFullscreen(): Promise<void> {
   if (document.fullscreenElement) await orientation.lock?.('portrait').catch(() => undefined);
 }
 
-/** The touch layout for the window, recomputed when its size changes. */
-function layoutCache(): () => TouchLayout {
+/** The touch layout for the window and the HUD strip's height, recomputed when they change. */
+function layoutCache(): (strip: number) => TouchLayout {
   let key = '';
   let layout: TouchLayout;
-  return () => {
-    const k = `${window.innerWidth}x${window.innerHeight}`;
+  return (strip) => {
+    const k = `${window.innerWidth}x${window.innerHeight}x${strip}`;
     if (k !== key) {
       key = k;
-      layout = touchLayout(window.innerWidth, window.innerHeight, safeInsets());
+      layout = touchLayout(window.innerWidth, window.innerHeight, safeInsets(), strip);
     }
     return layout;
   };
@@ -149,6 +157,14 @@ async function main(): Promise<void> {
     const stored = storedScores(file);
     if (stored) data.files.scores.set(file, stored);
   }
+  const settings = loadSettings();
+  // ?classic or ?remastered: that picture for this visit (links, tests), saved only when switched
+  const query = new URLSearchParams(location.search);
+  if (query.has('classic')) settings.remastered = false;
+  if (query.has('remastered')) settings.remastered = true;
+  if (!data.manifest.courses.includes(settings.course)) settings.course = data.manifest.courses[0];
+  const remasterAssets = (images: Parameters<typeof RemasterAssets.load>[1]) =>
+    RemasterAssets.load(import.meta.env.BASE_URL, images, data.manifest);
   const [images, sfx] = await Promise.all([
     loadImages(base, data.manifest),
     Sfx.load(base, data.manifest.sounds).catch((e) => {
@@ -156,16 +172,31 @@ async function main(): Promise<void> {
       return undefined;
     }),
   ]);
-  status.textContent = '';
 
   const world = new World(data.manifest.images, data.files, Date.now() | 0); // Randomize
   world.onHighScores = (file, scores) => {
     data.files.scores.set(file, scores.map((s) => ({ ...s })));
     storeScores(file, scores);
   };
-  const view = await ClassicView.create(document.getElementById('app')!, images, data.manifest);
+  const app = await createApp(document.getElementById('app')!);
+  const classic = new ClassicView(app, images, data.manifest);
+  // The Remastered graphics load when first needed (at once, as it is the default); until then, or if they can't
+  // load, the Classic picture shows.
+  let remastered: RemasteredView | null = null;
+  let remasterLoading: Promise<RemasteredView | null> | null = null;
+  const loadRemastered = () => remasterLoading ??= RemasteredView.create(app, import.meta.env.BASE_URL, remasterAssets(images))
+    .then((v) => (remastered = v))
+    .catch((e) => {
+      console.warn('no remastered graphics:', e);
+      return null;
+    });
+  if (settings.remastered) await loadRemastered();
+  status.textContent = '';
+  const useRemastered = () => settings.remastered && remastered !== null;
+  const view = () => (useRemastered() ? remastered! : classic);
+
   const keys = new Keyboard(window);
-  const mouse = new Mouse(view.element, (x, y) => view.toScreen(x, y));
+  const mouse = new Mouse(app.canvas, (x, y) => view().toScreen(x, y));
   // The installed app is fullscreen already (manifest); a second, element fullscreen would only add a way out to learn.
   const installedFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
   const touch = new TouchControls(document.body, installedFullscreen ? undefined : () => void touchFullscreen());
@@ -177,10 +208,13 @@ async function main(): Promise<void> {
   const unlock = () => sfx?.unlock();
   for (const type of ['keydown', 'pointerdown', 'pointerup', 'touchend']) window.addEventListener(type, unlock);
   // for the browser console, and tools that drive the page (`ready` resolves once the game runs)
-  if (import.meta.env.DEV) Object.assign(window, { world, view, ready: Promise.resolve() });
+  if (import.meta.env.DEV) {
+    Object.assign(window, { world, ready: Promise.resolve(), settings });
+    Object.defineProperty(window, 'view', { get: view, configurable: true });
+  }
 
   let acc = 0;
-  let last = performance.now();
+  const clock = new FrameClock();
   let paused = false;
   let dialog = false; // a dialog has the keyboard and the game waits
   // no game yet, or a course game on its first level with no points (also a new game after game over)
@@ -193,7 +227,7 @@ async function main(): Promise<void> {
   // Timer.ActiveOnly: the original stops while its window is inactive and goes on when it is active again
   document.addEventListener('visibilitychange', () => {
     acc = 0;
-    last = performance.now();
+    clock.reset();
     sfx?.setHidden(document.hidden || paused);
   });
 
@@ -206,8 +240,58 @@ async function main(): Promise<void> {
       keys.clearPresses();
     }
   };
+
+  // ---- the Remastered menus
+
+  const startCourse = () => {
+    world.loadCourse(settings.course);
+    world.request(GameState.Course);
+    menu.close();
+    setPaused(false);
+  };
+  const menu: Menu = new Menu(document.body, {
+    courses: () => data.manifest.courses.map((file) => ({
+      file,
+      levels: data.files.courses.get(file)?.filter((l) => data.files.levels.has(l)).length ?? 0,
+      scores: data.files.scores.get(highScoreFile(file)) ?? [],
+    })),
+    course: () => settings.course,
+    setCourse: (file) => {
+      settings.course = file;
+      saveSettings(settings);
+    },
+    play: startCourse,
+    remastered: () => settings.remastered,
+    setRemastered: (on) => setRemastered(on),
+    fullscreen: document.fullscreenEnabled && !installedFullscreen ? () => void toggleFullscreen().catch(() => undefined) : undefined,
+    isFullscreen: () => document.fullscreenElement !== null,
+    resume: () => {
+      menu.close();
+      setPaused(false);
+    },
+  });
+  document.addEventListener('fullscreenchange', () => menu.refresh());
+  if (import.meta.env.DEV) Object.assign(window, { menu, startCourse, pause: (p = true) => setPaused(p) });
+  const openPause = () => {
+    if (!useRemastered() || dialog || menu.open) return;
+    if (world.state === GameState.None) menu.showTitle();
+    else menu.showPause();
+  };
+  touch.onMenu = null;
+
+  /** The high-score name: the Remastered menu, or Classic's prompt and course editor dialog. */
   const openCourseEditor = () => runDialog(async () => {
     const p = world.pendingHighScore;
+    if (useRemastered()) {
+      if (p) world.enterHighScore((await menu.askName(p.place, p.score)) ?? '');
+      const choice = await menu.showDone();
+      world.courseEditorOpen = false; // CourseEditorTick: a new game on the next tick
+      if (choice === 'menu') {
+        world.state = GameState.None; // no new game until Play
+        menu.showTitle();
+      } else menu.close();
+      return;
+    }
     if (p) {
       const name = await inputBox(`${p.place + 1}. place`, 'Please enter your name (No blanks!)');
       world.enterHighScore((name ?? '').replace(/\s+/g, ''));
@@ -226,11 +310,12 @@ async function main(): Promise<void> {
     world.courseEditorOpen = false;
   });
 
-  document.body.prepend(menuBar([
+  const bar = menuBar([
     {
       label: 'Game', items: [
         { label: 'New', action: () => world.request(GameState.Course) },
         { label: 'Pause', action: () => setPaused(!paused), checked: () => paused },
+        { label: 'Remastered', action: () => setRemastered(true) },
       ],
     },
     {
@@ -255,28 +340,75 @@ async function main(): Promise<void> {
         { label: 'Editor...', action: () => world.request(GameState.CourseEditor) },
       ],
     },
-  ]));
+  ]);
+  document.body.prepend(bar);
 
-  let second = last, ticksThisSecond = 0, fps = 0; // DXTimer.FrameRate: ticks in the last second
-  const frame = (now: number) => {
-    acc += Math.min(now - last, TICK_MS * MAX_TICKS_PER_FRAME);
-    last = now;
-    if (!dialog) {
-      if (keys.takePress('KeyP')) setPaused(!paused);
-      if (keys.takePress('KeyF')) void toggleFullscreen();
-      if (keys.takePress('F2')) world.request(GameState.Course);
+  /** Switch the graphics (R, the menus): the game goes on as it is. */
+  function setRemastered(on: boolean): void {
+    settings.remastered = on;
+    saveSettings(settings);
+    if (on && !remastered) {
+      void loadRemastered().then(() => applyMode());
     }
-    if (paused || dialog) acc = 0;
+    applyMode();
+    menu.refresh();
+  }
+  function applyMode(): void {
+    const r = useRemastered();
+    classic.visible = !r;
+    if (remastered) remastered.visible = r;
+    bar.hidden = r;
+    touch.onMenu = r ? openPause : null;
+    if (!r && menu.open) {
+      // Classic has no menu screen: go on with the game, or start one as the original does at launch
+      menu.close();
+      setPaused(false);
+      if (world.state === GameState.None) world.request(GameState.Course);
+    }
+  }
+  if (useRemastered()) {
+    world.request(GameState.None); // the title screen first
+    menu.showTitle();
+  }
+  applyMode();
+
+  let second = performance.now(), ticksThisSecond = 0, fps = 0; // DXTimer.FrameRate: ticks in the last second
+  let padPrev = { up: false, down: false, left: false, right: false, ok: false, back: false, start: false };
+  const frame = (now: number) => {
+    acc += Math.min(clock.step(now), TICK_MS * MAX_TICKS_PER_FRAME);
+    if (keys.takePress('KeyR') && !dialog) setRemastered(!settings.remastered);
+    if (keys.takePress('KeyF') && (!dialog || menu.open)) void toggleFullscreen();
+    if (!dialog && !menu.open) {
+      if (keys.takePress('KeyP')) setPaused(!paused);
+      if (keys.takePress('F2')) world.request(GameState.Course);
+      if (keys.takePress('Escape')) openPause();
+    }
+    // the gamepad in the menus: d-pad / stick, A, B; Start opens the pause menu
+    pad.sample();
+    const gp = navigator.getGamepads?.().find((p) => p?.connected) ?? null;
+    if (gp) {
+      const b = (i: number) => gp.buttons[i]?.pressed ?? false;
+      const cur = { up: b(12) || gp.axes[1] < -0.5, down: b(13) || gp.axes[1] > 0.5, left: b(14) || gp.axes[0] < -0.5,
+        right: b(15) || gp.axes[0] > 0.5, ok: b(0), back: b(1), start: b(9) };
+      if (menu.open) {
+        for (const k of ['up', 'down', 'left', 'right', 'ok', 'back'] as const) if (cur[k] && !padPrev[k]) menu.nav(k);
+        if (cur.start && !padPrev.start && menu.paused) menu.nav('back');
+      } else if (cur.start && !padPrev.start) openPause();
+      padPrev = cur;
+    }
+    if (paused || dialog || menu.open) acc = 0;
+    const r = useRemastered() ? remastered : null;
     while (acc >= TICK_MS) {
       keys.sample();
       mouse.sample();
       touch.sample();
-      pad.sample();
       const k = keys.input(), g = pad.input(), t = touch.input();
       if (k.left || k.right || g.left || g.right || t.left || t.right) mouse.target = null; // they take over from the mouse
       const p = world.paddle;
       const steer = p ? mouse.steer(p.x + Math.trunc(p.w / 2)) : { left: false, right: false };
+      r?.beforeTick(world);
       world.tick(merge(k, g, t, { ...steer, up: false, fire: mouse.fire }));
+      r?.afterTick(world);
       sfx?.play(world.sounds);
       ticksThisSecond++;
       acc -= TICK_MS;
@@ -292,10 +424,13 @@ async function main(): Promise<void> {
     }
     if (world.state === GameState.CourseEditor && world.courseEditorOpen && !dialog) void openCourseEditor();
     const playing = world.state === GameState.Course || world.state === GameState.Test;
-    view.element.style.cursor = playing ? 'none' : 'default';
-    touch.update(touchUsed, playing && !dialog, layout());
-    view.setArea(touchUsed ? layout().game : null, touchUsed && layout().portrait);
-    if (!paused) view.draw(world, fps);
+    app.canvas.style.cursor = playing && !menu.open ? 'none' : 'default';
+    const strip = r ? REMASTERED_STRIP : CLASSIC_STRIP;
+    touch.update(touchUsed, playing && !dialog && !menu.open, layout(strip));
+    if (r) r.touch = touchUsed;
+    view().setArea(touchUsed ? layout(strip).game : null, touchUsed && layout(strip).portrait);
+    if (r) r.draw(world, paused || dialog || menu.open ? 0 : acc / TICK_MS);
+    else if (!paused) classic.draw(world, fps);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);

@@ -112,14 +112,55 @@
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
   (3) the HUD font (MS Sans Serif 12 pt is approximated with Arial).
 
-### Phase 3: Remastered mode
-- [ ] Graphics: choose between upscaling (hq2x/xBR/AI) and re-rendering the stones, balls and paddles.
-- [ ] Interpolated motion at the display's refresh rate; effects.
-- [ ] Finish the HUD (everything outside the playfield; user, session 4): the original never finished it (plain
-  `FPS` / `Lifes` / `Score` / `Level` text at x 500 on black). Make it beautiful, in a style consistent with the
-  original's graphics (the playfield frame, stones, capsules). In portrait on a phone it is a strip above the
-  playfield, as Classic's (decision 10).
-- [ ] Switching between Classic and Remastered at any time.
+### Phase 3: Remastered mode 🔄 (session 6, 2026-10-24)
+Remastered is the default (user, session 6). First version in place; needs the user's eye and a real device.
+- [x] Graphics (decision 11): upscaling compared first (Lanczos, hq4x, xBR: the 30 x 15 pre-rendered 3D sprites
+  only get blurry), then **re-rendered**: `tools/remaster_render.py` (`npm run remaster`) ray-traces height fields
+  (bevelled octagon stones, drum capsules, spheres, the paddle's gold cage over its light bar, the gun paddle's
+  glass dome, the shot rocket) at 4x with 4 x 4 supersampling, colours sampled from the originals, every animation
+  with the original's frames and meaning (gem glint of bonus stones, rolling capsule labels, the piercing ball's
+  colour cycle, Killer's colour cycle, Bubbler's water, Eater / Doubler clouds). The playfield frame is re-rendered
+  in white marble; the 9 background tiles are upscaled (Lanczos, wrapped, sharpened). Out: two 2048² WebP atlas
+  pages, `frame.webp`, `sprites.json` in `game/public/remaster/` (0.6 MB, committed like `data/`). Not re-rendered:
+  the shatter animations (particles instead), the banners (text instead), the editor's labels and palette (the
+  originals, smoothly scaled, until Phase 4).
+- [x] `src/render/remasteredView.ts`: the same 640 × 480 layout (portrait: the playfield under a 34 px strip),
+  scaled to fill the area (not integer). Positions interpolated between the last two ticks (`beforeTick`; a jump
+  over 48 px snaps). Effects from comparing ticks (`afterTick`, render only): splinters in the stone's colour where
+  a stone shatters, a flash and dust when a stone takes a hit and stays, sparks off the paddle, a ring when a
+  capsule is collected, muzzle flash and hit sparks for shots, glows (balls, shots, capsules, the paddle: green
+  with glue, blue with the gun), light on the floor, ball trails, shadows, a dimmed and vignetted background, a
+  shake on D'Oh / Game Over, a fade into each level. Banners are text (Comic Neue Bold, OFL, in
+  `public/fonts/`) in the TextImageList's gold, popping in and fading out.
+- [x] HUD (decision 9) `src/render/remastered/hud.ts`: a panel right of the playfield in the frame's marble look:
+  title, score (counting up), the course's best, lives as small paddles, level n / count and course, bars for the
+  power-ups that run out (glue 800, gun 500, piercing 400, mega ball 300 ticks), key hint. Portrait strip: lives,
+  score, level, thin power-up bars.
+- [x] Menus (user, session 6: "don't stick with the ugly windows menu"; decision 12) `src/ui/menu.ts`, Remastered
+  only: a title screen (Play, Choose course with cards: levels and best score, High scores per course, Graphics,
+  Fullscreen), the pause menu (Esc, ☰ touch button, gamepad Start), the high-score name entry and the table after
+  it (Play again / Main menu). Keys ↑ ↓ ← → Enter Space Esc, gamepad d-pad / A / B. Remastered starts on the title
+  screen; Classic starts a game at once and keeps the Windows menu bar and dialogs (plus Game ▸ Remastered).
+- [x] Switching at any time (decision 13): **R**, the menus' Graphics row, Classic's Game ▸ Remastered; saved
+  (`wunioid.settings` in localStorage, with the chosen course). `?classic` / `?remastered` in the URL pick one for
+  a visit. Both pictures share one PixiJS application (`render/app.ts`); the game goes on unchanged. If the
+  Remastered files can't load, Classic shows.
+- [x] `tools/screenshot.mjs`: `MODE=classic|remastered`; Remastered steps save the window; DEV globals `menu`,
+  `startCourse()`, `pause()`.
+- [ ] **User:** play Remastered on desktop and the phone: the look of the re-renders (capsules, paddle, Bubbler,
+  frame), the effects (too much? too little?), the HUD, the menus, smoothness at 60/120 Hz.
+- [x] User (session 7): weaker light around the balls and the paddle (about half the size and brightness); smooth
+  ball motion. The simulation moves the ball evenly (6 px a tick, checked), so the judder came from the picture:
+  the trail's glows sat on the tick positions and stepped at 45 Hz under a ball gliding at the display's rate (now
+  sampled along the interpolated path, every half tick), and requestAnimationFrame's timestamps can jitter by a few
+  ms, each ms a quarter pixel off the ball's line (`src/frameClock.ts` snaps frame times to the learnt refresh
+  period and feeds the difference back slowly). Not changed: the ball still sinks up to one step (6 px) into the
+  paddle or a stone before it turns, as in the original (the tick moves it, then the collision turns it).
+- [ ] **User:** is the ball smooth now (desktop and phone)? If the sinking into the paddle at a bounce still reads as
+  a jerk, the picture could draw the bounce at the contact point.
+- [ ] Banners' and HUD's font: Comic Neue stands in for the original's Comic Sans look; check with the user.
+- [ ] Maybe: re-render the background tiles too (they are upscaled, soft on large screens); a sound for menu
+  moves; the level editor's palette in the remastered look (Phase 4).
 
 ### Phase 4: Editors and release
 - [ ] Level editor and course editor in the browser, as in the original, with `.lev`/`.cse` import and export
@@ -142,3 +183,8 @@
    (session 4).
 10. Phones default to portrait. There, even Classic diverges from the original: no FPS counter, `Lifes` /
     `Score` / `Level` in a strip above the playfield, and the playfield at the full width (session 5).
+11. Remastered graphics are re-rendered (ray-traced height fields at 4x by `tools/remaster_render.py`), not
+    upscaled (session 6).
+12. Remastered has its own menus (title screen, course choice, high scores, pause, name entry); Classic keeps the
+    original's Windows menu bar and dialogs (session 6).
+13. Remastered is the default; switch at any time with R or the menus (session 6).

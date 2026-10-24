@@ -9,10 +9,13 @@ brings it back to life in the browser, in the same way as
 - **Classic 1999**: the original as it was.
 - **Remastered**: the same game with sharper graphics, smooth motion and effects.
 
-Work in progress: see [docs/PLAN.md](docs/PLAN.md). The Classic game runs: `cd game && npm install && npm run dev`.
+Work in progress: see [docs/PLAN.md](docs/PLAN.md). Both modes run: `cd game && npm install && npm run dev`.
+Remastered is the default and starts on its title screen; **R** switches between Remastered and Classic at any
+time (also in the menus, or `?classic` in the URL).
 
 Keys as in the original: ← → (or H L, keypad 4 6) move, Space (or Z) fires and releases the ball, ↑ (K, keypad 8)
-releases it. The remake adds the mouse, touch buttons and gamepads, P for pause, F for fullscreen and F2 for a new game.
+releases it. The remake adds the mouse, touch buttons and gamepads, P for pause, F for fullscreen, F2 for a new game,
+and in Remastered Esc (or ☰ on touch, Start on a gamepad) for the menu.
 
 ## Docs
 - [docs/PLAN.md](docs/PLAN.md): goals, architecture, phases, decisions

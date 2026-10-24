@@ -6,7 +6,8 @@
 // whole window instead (menus, dialogs). The game loop keeps running in the page; steps can tick `world` directly.
 // Example: node tools/screenshot.mjs /tmp/shots "" "for (let i = 0; i < 40; i++) world.tick({left: 0, right: 0, up: 1, fire: 0})"
 // Environment: SIZE=390x844 sets the window (default 1280x1000), TOUCH=1 emulates a phone (coarse pointer, touch
-// buttons).
+// buttons), MODE=classic or MODE=remastered picks the picture (default: the saved setting, Remastered). Remastered
+// has no picture of its own: its steps always save the window. `menu` and `startCourse()` are globals too.
 
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -23,6 +24,7 @@ if (!out) {
 const PORT = 5292, DEBUG_PORT = 6292;
 const [WIDTH, HEIGHT] = (process.env.SIZE ?? '1280x1000').split('x').map(Number);
 const TOUCH = process.env.TOUCH === '1';
+const MODE = process.env.MODE ? `?${process.env.MODE}` : '';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function waitFor(url, ms = 30000) {
@@ -92,12 +94,13 @@ try {
   await send('Runtime.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: TOUCH });
   if (TOUCH) await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-  await send('Page.navigate', { url: `http://localhost:${PORT}/` });
+  await send('Page.navigate', { url: `http://localhost:${PORT}/${MODE}` });
   for (let i = 0; i < 240 && (await evaluate('typeof window.ready').catch(() => 'undefined')) !== 'object'; i++) await sleep(250);
   await evaluate('window.ready');
   for (const [i, step] of (steps.length ? steps : ['']).entries()) {
-    const whole = step.startsWith('page:');
-    await evaluate(`(async () => { ${whole ? step.slice(5) : step}; })()`);
+    const page = step.startsWith('page:');
+    await evaluate(`(async () => { ${page ? step.slice(5) : step}; })()`);
+    const whole = page || !(await evaluate('!!view.canvas'));
     await sleep(300);
     const file = join(out, `shot-${i}.png`);
     if (whole) {

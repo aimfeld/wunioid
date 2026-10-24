@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "data": "cd .. && uv run --with pefile --with pillow python tools/export_game_data.py original_source game/public/data",
+    "remaster": "cd .. && uv run --with numpy --with pillow python tools/remaster_render.py game/public/data game/public/remaster",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",

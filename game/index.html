@@ -24,6 +24,7 @@
       .menubar { position: fixed; top: 0; left: 0; z-index: 10; display: flex; background: #c0c0c0;
         border-bottom: 1px solid #808080; opacity: 0.25; transition: opacity 0.2s; }
       .menubar:hover, .menubar:focus-within, .menubar:has(.open) { opacity: 1; }
+      .menubar[hidden] { display: none; }
       .window .menubar { position: static; opacity: 1; margin: -6px -8px 8px; border-bottom: 1px solid #fff; }
       .menu { position: relative; }
       .menu-title { display: block; padding: 3px 7px; cursor: default; }
