@@ -5,7 +5,8 @@ import { loadGameData } from './data';
 import { toggleFullscreen } from './input/fullscreen';
 import { Gamepad } from './input/gamepad';
 import { Keyboard } from './input/keyboard';
-import { Pointer } from './input/pointer';
+import { Mouse } from './input/mouse';
+import { TouchControls, touchLayout, type Insets, type TouchLayout } from './input/touch';
 import { ClassicView, loadImages } from './render/classicView';
 import { highScoreFile, parseHighScores, writeHighScores, type HighScore } from './sim/files';
 import { GameState, World, type Input } from './sim/world';
@@ -46,6 +47,33 @@ function registerOffline(): void {
   }, (e) => console.warn('no service worker:', e));
 }
 
+/** The notch and the home bar (env(safe-area-inset-*)), from Dark Planet. */
+function safeInsets(): Insets {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) ' +
+    'env(safe-area-inset-bottom) env(safe-area-inset-left)';
+  document.body.appendChild(probe);
+  const cs = getComputedStyle(probe);
+  const insets = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0,
+    b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
+  probe.remove();
+  return insets;
+}
+
+/** The touch layout for the window, recomputed when its size changes. */
+function layoutCache(): () => TouchLayout {
+  let key = '';
+  let layout: TouchLayout;
+  return () => {
+    const k = `${window.innerWidth}x${window.innerHeight}`;
+    if (k !== key) {
+      key = k;
+      layout = touchLayout(window.innerWidth, window.innerHeight, safeInsets());
+    }
+    return layout;
+  };
+}
+
 const merge = (...inputs: Input[]): Input => ({
   left: inputs.some((i) => i.left),
   right: inputs.some((i) => i.right),
@@ -83,7 +111,12 @@ async function main(): Promise<void> {
   };
   const view = await ClassicView.create(document.getElementById('app')!, images, data.manifest);
   const keys = new Keyboard(window);
-  const pointer = new Pointer(view.element, (x, y) => view.toScreen(x, y));
+  const mouse = new Mouse(view.element, (x, y) => view.toScreen(x, y));
+  const touch = new TouchControls(document.body, () => void toggleFullscreen().catch(() => undefined));
+  const layout = layoutCache();
+  // The touch buttons show on a phone or tablet, and from the last touch until the next mouse click.
+  let touchUsed = window.matchMedia('(pointer: coarse)').matches;
+  window.addEventListener('pointerdown', (e) => (touchUsed = e.pointerType !== 'mouse'), { capture: true });
   const pad = new Gamepad();
   const unlock = () => sfx?.unlock();
   for (const type of ['keydown', 'pointerdown', 'pointerup', 'touchend']) window.addEventListener(type, unlock);
@@ -177,13 +210,14 @@ async function main(): Promise<void> {
     if (paused || dialog) acc = 0;
     while (acc >= TICK_MS) {
       keys.sample();
-      pointer.sample();
+      mouse.sample();
+      touch.sample();
       pad.sample();
-      const k = keys.input(), g = pad.input();
-      if (k.left || k.right || g.left || g.right) pointer.target = null; // the keys take over from the pointer
+      const k = keys.input(), g = pad.input(), t = touch.input();
+      if (k.left || k.right || g.left || g.right || t.left || t.right) mouse.target = null; // they take over from the mouse
       const p = world.paddle;
-      const steer = p ? pointer.steer(p.x + Math.trunc(p.w / 2)) : { left: false, right: false };
-      world.tick(merge(k, g, { ...steer, up: false, fire: pointer.fire }));
+      const steer = p ? mouse.steer(p.x + Math.trunc(p.w / 2)) : { left: false, right: false };
+      world.tick(merge(k, g, t, { ...steer, up: false, fire: mouse.fire }));
       sfx?.play(world.sounds);
       ticksThisSecond++;
       acc -= TICK_MS;
@@ -194,7 +228,10 @@ async function main(): Promise<void> {
       second = now;
     }
     if (world.state === GameState.CourseEditor && world.courseEditorOpen && !dialog) void openCourseEditor();
-    view.element.style.cursor = world.state === GameState.Course || world.state === GameState.Test ? 'none' : 'default';
+    const playing = world.state === GameState.Course || world.state === GameState.Test;
+    view.element.style.cursor = playing ? 'none' : 'default';
+    touch.update(touchUsed, playing && !dialog, layout());
+    view.setArea(touchUsed ? layout().game : null);
     if (!paused) view.draw(world, fps);
     requestAnimationFrame(frame);
   };

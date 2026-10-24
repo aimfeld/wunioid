@@ -17,8 +17,8 @@
     window.
   - *Remastered*: the same state at native resolution and refresh rate, interpolated between ticks, with
     upscaled or re-rendered graphics and effects (particles, glow). Same sounds.
-- **Controls**: the original has keyboard and joystick only. The remake adds mouse (pointer lock), touch (drag the
-  paddle) and gamepad. The tall playfield suits phones held upright.
+- **Controls**: the original has keyboard and joystick only. The remake adds mouse (pointer lock), touch buttons
+  (◀ ▶ left, Fire right; decision 8) and gamepad. The tall playfield suits phones held upright.
 
 ## Phases
 ### Phase 0: Investigation & setup ✅ (sessions 1–2, 2026-10-24)
@@ -80,14 +80,25 @@
 - [x] Deploy to GitHub Pages (session 3): https://aimfeld.github.io/wunioid/. Pages builds from GitHub Actions; the
   `github-pages` environment only accepts `production`. `bin/deploy.sh` tests, builds and pushes `main` to
   `production` (as Dark Planet).
-- [ ] Try it on a phone (touch, scaling) and with a gamepad.
-- [ ] Open questions for the user: (1) mouse/touch: steer at the paddle's own speed (now) or move the paddle
+- [x] Tried on desktop and a phone by the user (session 4): plays and feels like the original, but steering by
+  dragging is too hard on a phone.
+- [x] Touch buttons (session 4, decision 8): `src/input/touch.ts` after Dark Planet's. ◀ ▶ bottom left, Fire bottom
+  right, fullscreen (where the browser has it); the left half of the window is the arrow pad (split where ◀ and ▶
+  meet, the thumb slides between them), the right half Fire. The picture moves beside the buttons in landscape,
+  above them in portrait. Shown on a coarse-pointer device and after a touch, hidden after a mouse click. Touch
+  dragging removed (`pointer.ts` → `mouse.ts`, mouse only). `tools/screenshot.mjs` takes `SIZE=WxH TOUCH=1`.
+- [ ] Try the touch buttons on a phone; try a gamepad.
+- [ ] Open questions for the user: (1) mouse: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
   (3) the HUD font (MS Sans Serif 12 pt is approximated with Arial).
 
 ### Phase 3: Remastered mode
 - [ ] Graphics: choose between upscaling (hq2x/xBR/AI) and re-rendering the stones, balls and paddles.
 - [ ] Interpolated motion at the display's refresh rate; effects.
+- [ ] Finish the HUD (everything outside the playfield; user, session 4): the original never finished it (plain
+  `FPS` / `Lifes` / `Score` / `Level` text at x 500 on black). Make it beautiful, in a style consistent with the
+  original's graphics (the playfield frame, stones, capsules). Idea: in portrait on a phone, put it above the
+  playfield so the playfield can fill the width (Classic shows the whole 640 × 480 picture, at ~0.6× on a phone).
 - [ ] Switching between Classic and Remastered at any time.
 
 ### Phase 4: Editors and release
@@ -105,3 +116,7 @@
 6. Fixed simulation tick of 1000/22 ≈ 45.45 Hz, as the original's 22 ms DXTimer (session 2).
 7. Blocking banners (D'Oh!, Game Over, Course Done) and the "Well done" phase run at the tick rate, not at the
    display refresh rate as in the original (session 2).
+8. Touch: buttons instead of dragging, ◀ ▶ for the left thumb and Fire for the right, as Dark Planet's touch
+   buttons (session 4).
+9. Remastered mode gets a finished, good-looking HUD in a style consistent with the original
+   (session 4).

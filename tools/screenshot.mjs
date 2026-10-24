@@ -5,6 +5,8 @@
 // step the Classic picture (640 x 480) is saved as <out-dir>/shot-<n>.png; a step starting with "page:" saves the
 // whole window instead (menus, dialogs). The game loop keeps running in the page; steps can tick `world` directly.
 // Example: node tools/screenshot.mjs /tmp/shots "" "for (let i = 0; i < 40; i++) world.tick({left: 0, right: 0, up: 1, fire: 0})"
+// Environment: SIZE=390x844 sets the window (default 1280x1000), TOUCH=1 emulates a phone (coarse pointer, touch
+// buttons).
 
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -18,7 +20,9 @@ if (!out) {
   console.error('usage: node tools/screenshot.mjs <out-dir> [step...]');
   process.exit(2);
 }
-const PORT = 5292, DEBUG_PORT = 6292, WIDTH = 1280, HEIGHT = 1000;
+const PORT = 5292, DEBUG_PORT = 6292;
+const [WIDTH, HEIGHT] = (process.env.SIZE ?? '1280x1000').split('x').map(Number);
+const TOUCH = process.env.TOUCH === '1';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function waitFor(url, ms = 30000) {
@@ -86,7 +90,8 @@ try {
   };
   await new Promise((r) => (ws.onopen = r));
   await send('Runtime.enable');
-  await send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
+  await send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: TOUCH });
+  if (TOUCH) await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   await send('Page.navigate', { url: `http://localhost:${PORT}/` });
   for (let i = 0; i < 240 && (await evaluate('typeof window.ready').catch(() => 'undefined')) !== 'object'; i++) await sleep(250);
   await evaluate('window.ready');

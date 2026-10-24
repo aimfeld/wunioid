@@ -4,6 +4,7 @@
 
 import { Application, Sprite as PixiSprite, Texture } from 'pixi.js';
 import type { Manifest } from '../data';
+import type { Rect } from '../input/touch';
 import { Tiles } from '../sim/sprites';
 import { GameState, type World } from '../sim/world';
 
@@ -55,6 +56,7 @@ export class ClassicView {
   private readonly texture: Texture;
   private readonly sprite: PixiSprite;
   private readonly hud = [new TextLine(), new TextLine(), new TextLine(), new TextLine()];
+  private area: Rect | null = null;
 
   private constructor(private readonly app: Application, private readonly images: Images, private readonly manifest: Manifest) {
     this.canvas.width = W;
@@ -82,8 +84,16 @@ export class ClassicView {
     return this.app.canvas;
   }
 
+  /** The window part to draw the picture in (CSS pixels; the touch controls take the rest), or null: all of it. */
+  setArea(area: Rect | null): void {
+    const a = this.area;
+    if (a === area || (a && area && a.x === area.x && a.y === area.y && a.w === area.w && a.h === area.h)) return;
+    this.area = area && { ...area };
+    this.layout();
+  }
+
   /** Where the picture is, in CSS pixels. */
-  get picture(): { x: number; y: number; w: number; h: number } {
+  get picture(): Rect {
     const s = this.sprite.scale.x;
     return { x: this.sprite.x, y: this.sprite.y, w: W * s, h: H * s };
   }
@@ -95,16 +105,17 @@ export class ClassicView {
   }
 
   /**
-   * The largest integer scale in device pixels (every source pixel stays sharp), centred; where that would leave
-   * much of the window empty (phones), the largest scale that fits.
+   * The largest integer scale in device pixels (every source pixel stays sharp), centred in the area; where that
+   * would leave much of it empty (phones), the largest scale that fits.
    */
   private layout(): void {
     const dpr = window.devicePixelRatio || 1;
-    const fit = Math.min((window.innerWidth * dpr) / W, (window.innerHeight * dpr) / H);
+    const a = this.area ?? { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
+    const fit = Math.min((a.w * dpr) / W, (a.h * dpr) / H);
     const scale = Math.floor(fit) >= 1 && Math.floor(fit) / fit >= 0.75 ? Math.floor(fit) : fit;
     this.sprite.scale.set(scale / dpr);
-    this.sprite.x = Math.floor((window.innerWidth - (W * scale) / dpr) / 2);
-    this.sprite.y = Math.floor((window.innerHeight - (H * scale) / dpr) / 2);
+    this.sprite.x = Math.floor(a.x + (a.w - (W * scale) / dpr) / 2);
+    this.sprite.y = Math.floor(a.y + (a.h - (H * scale) / dpr) / 2);
   }
 
   /** One pattern of an image list item at (x, y). */
