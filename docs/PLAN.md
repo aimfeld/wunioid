@@ -105,7 +105,8 @@
   fullscreen button locks it where the browser can). In a portrait window with the touch buttons, Classic shows
   only the playfield (`Rahmen`'s 428 px, full width) under a HUD strip (`Lifes` left, `Score` centre, `Level`
   right, no FPS); a landscape window keeps the whole 640 × 480 picture beside the buttons.
-- [ ] Try the phone portrait layout on a phone.
+  Always scaled to the full width (an integer scale left black bars at the sides at 2.625 dpr). Confirmed on the
+  user's phone.
 - [ ] Try the touch buttons on a phone; try a gamepad.
 - [ ] Open questions for the user: (1) mouse: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
