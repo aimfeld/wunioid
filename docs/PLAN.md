@@ -94,7 +94,7 @@
   (fullscreen already). Checked against `vite preview` in headless Chrome.
 - [x] Manifest `id` `"./"` → `"/wunioid/"` (session 4): an `id` resolves against the start URL's *origin*, so
   `"./"` was `https://aimfeld.github.io/`, the same as Dark Planet's; Android Chrome took Wunioid for the
-  installed Dark Planet ("already installed", then "Could not open app").
+  installed Dark Planet ("already installed", then "Could not open app"). Confirmed: installs as its own app (user).
 - [ ] Try the touch buttons on a phone; try a gamepad.
 - [ ] Open questions for the user: (1) mouse: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
