@@ -135,14 +135,14 @@ export class ClassicView {
 
   /**
    * The largest integer scale in device pixels (every source pixel stays sharp), centred in the area; where that
-   * would leave much of it empty (phones), the largest scale that fits.
+   * would leave much of it empty (phones), the largest scale that fits. Phone portrait always fills the width.
    */
   private layout(): void {
     const dpr = window.devicePixelRatio || 1;
     const a = this.area ?? { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
     const [pw, ph] = this.strip ? [FIELD_W, H + STRIP_H] : [W, H];
     const fit = Math.min((a.w * dpr) / pw, (a.h * dpr) / ph);
-    const scale = Math.floor(fit) >= 1 && Math.floor(fit) / fit >= 0.75 ? Math.floor(fit) : fit;
+    const scale = !this.strip && Math.floor(fit) >= 1 && Math.floor(fit) / fit >= 0.75 ? Math.floor(fit) : fit;
     const s = scale / dpr;
     const x = Math.floor(a.x + (a.w - pw * s) / 2), y = Math.floor(a.y + (a.h - ph * s) / 2);
     this.sprite.scale.set(s);
