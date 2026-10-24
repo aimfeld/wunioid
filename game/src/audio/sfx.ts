@@ -15,6 +15,10 @@ export class Sfx {
   }
 
   static async load(base: string, names: string[]): Promise<Sfx> {
+    // iOS puts Web Audio in the "ambient" session, which the ring/silent switch mutes (Dark Planet's music, an
+    // audio element, lifts its effects into "playback"); Safari 16.4+ lets the page ask for "playback" itself.
+    const session = (navigator as { audioSession?: { type: string } }).audioSession;
+    if (session) session.type = 'playback';
     const ctx = new AudioContext();
     const buffers = await Promise.all(names.map(async (n) => {
       const data = await (await fetch(`${base}sounds/${n}.wav`)).arrayBuffer();
@@ -25,7 +29,8 @@ export class Sfx {
 
   /** Browsers start audio only after a user gesture; call this from input handlers. */
   unlock(): void {
-    if (this.ctx.state === 'suspended') void this.ctx.resume();
+    // iOS has a further state, "interrupted" (a call, the app in the background), that also needs a resume
+    if (this.ctx.state !== 'running' && this.ctx.state !== 'closed') void this.ctx.resume();
   }
 
   /** The page is hidden or the game paused: hold the sounds. */

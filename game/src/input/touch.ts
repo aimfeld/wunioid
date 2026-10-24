@@ -101,6 +101,13 @@ export class TouchControls {
     this.root.addEventListener('pointermove', (e) => this.move(e));
     for (const type of ['pointerup', 'pointercancel'] as const) this.root.addEventListener(type, (e) => this.release(e));
     this.root.addEventListener('contextmenu', (e) => e.preventDefault());
+    // iOS zooms on a double tap (two quick taps on Fire) despite touch-action: none, and then reports the zoomed
+    // viewport as window.innerWidth/innerHeight, which throws the layout off screen (Dark Planet's fix). Cancelling
+    // touchend stops the zoom; the game reads pointer events, but the menus and dialogs need the click it
+    // synthesises, so they keep it.
+    document.addEventListener('touchend', (e) => {
+      if (!(e.target instanceof Element && e.target.closest('.menubar, .backdrop'))) e.preventDefault();
+    }, { passive: false });
     window.addEventListener('blur', () => this.holds.clear());
   }
 

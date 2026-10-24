@@ -95,6 +95,12 @@
 - [x] Manifest `id` `"./"` → `"/wunioid/"` (session 4): an `id` resolves against the start URL's *origin*, so
   `"./"` was `https://aimfeld.github.io/`, the same as Dark Planet's; Android Chrome took Wunioid for the
   installed Dark Planet ("already installed", then "Could not open app"). Confirmed: installs as its own app (user).
+- [x] iPhone fixes (session 4, user report): two quick taps on Fire zoomed the page and threw the layout off
+  screen; `touch.ts` cancels `touchend` document-wide, except in the menus and dialogs (they need the click), as
+  Dark Planet's fix. No sound on the iPhone: likely the silent switch, which mutes Web Audio in iOS's "ambient"
+  session (Dark Planet escapes it through its music element); `sfx.ts` asks for `navigator.audioSession.type =
+  'playback'` (Safari 16.4+) and also resumes from iOS's "interrupted" state.
+- [ ] Check on the iPhone: no zoom on a double tap, sounds (with the silent switch on and off), menus still work.
 - [ ] Try the touch buttons on a phone; try a gamepad.
 - [ ] Open questions for the user: (1) mouse: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
