@@ -101,6 +101,13 @@ function safeInsets(): Insets {
   return insets;
 }
 
+/** The touch button's fullscreen, locked to portrait where the browser allows it (as the manifest). */
+async function touchFullscreen(): Promise<void> {
+  await toggleFullscreen().catch(() => undefined);
+  const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+  if (document.fullscreenElement) await orientation.lock?.('portrait').catch(() => undefined);
+}
+
 /** The touch layout for the window, recomputed when its size changes. */
 function layoutCache(): () => TouchLayout {
   let key = '';
@@ -161,8 +168,7 @@ async function main(): Promise<void> {
   const mouse = new Mouse(view.element, (x, y) => view.toScreen(x, y));
   // The installed app is fullscreen already (manifest); a second, element fullscreen would only add a way out to learn.
   const installedFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
-  const touch = new TouchControls(document.body,
-    installedFullscreen ? undefined : () => void toggleFullscreen().catch(() => undefined));
+  const touch = new TouchControls(document.body, installedFullscreen ? undefined : () => void touchFullscreen());
   const layout = layoutCache();
   // The touch buttons show on a phone or tablet, and from the last touch until the next mouse click.
   let touchUsed = window.matchMedia('(pointer: coarse)').matches;
@@ -288,7 +294,7 @@ async function main(): Promise<void> {
     const playing = world.state === GameState.Course || world.state === GameState.Test;
     view.element.style.cursor = playing ? 'none' : 'default';
     touch.update(touchUsed, playing && !dialog, layout());
-    view.setArea(touchUsed ? layout().game : null);
+    view.setArea(touchUsed ? layout().game : null, touchUsed && layout().portrait);
     if (!paused) view.draw(world, fps);
     requestAnimationFrame(frame);
   };

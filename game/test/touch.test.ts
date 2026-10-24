@@ -12,7 +12,9 @@ describe('touchLayout', () => {
   ] as const) {
     it(`${name}: the buttons stay on screen and off the picture`, () => {
       const l = touchLayout(vw, vh, inset);
-      expect(l.game.w / l.game.h).toBeCloseTo(640 / 480);
+      expect(l.portrait).toBe(vh > vw);
+      expect(l.game.w / l.game.h).toBeCloseTo(l.portrait ? 428 / 504 : 640 / 480);
+      if (l.portrait) expect(l.game.w).toBeCloseTo(vw - inset.l - inset.r); // the full width
       for (const b of [l.left, l.right, l.fire, l.fullscreen]) {
         expect(overlaps(b, l.game)).toBe(false);
         expect(b.x).toBeGreaterThanOrEqual(inset.l);

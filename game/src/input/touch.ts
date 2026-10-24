@@ -2,7 +2,8 @@
 // (Button1: release the ball, the gun) for the right. In a level the overlay takes every touch: the left half of
 // the window is the arrow pad, split between ◀ and ▶ where the two buttons meet, so the thumb can rock or slide
 // from one to the other without looking; the right half is Fire. The picture moves aside to leave the buttons
-// room: beside them in landscape, above them in portrait, whichever gives the larger picture.
+// room: beside them in a landscape window, above them in a portrait one. In portrait the picture is the playfield
+// alone with the HUD as a strip on top (the remake, user), so the playfield takes the full width.
 
 import { NO_INPUT, type Input } from '../sim/world';
 
@@ -21,8 +22,10 @@ export interface Insets {
 }
 
 export interface TouchLayout {
-  /** Where the view draws the 640 x 480 picture (CSS pixels). */
+  /** Where the view draws the picture (CSS pixels): 640 x 480, or in portrait the playfield and the HUD strip. */
   game: Rect;
+  /** A portrait window: the playfield with the HUD strip above it (ClassicView.setArea). */
+  portrait: boolean;
   left: Rect; // ◀
   right: Rect; // ▶
   fire: Rect;
@@ -31,24 +34,27 @@ export interface TouchLayout {
 
 const W = 640;
 const H = 480;
+/** In portrait: the playfield (ClassicView's FIELD_W) under the HUD strip (STRIP_H). */
+const PW = 428;
+const PH = 480 + 24;
 
 export function touchLayout(vw: number, vh: number, inset: Insets): TouchLayout {
   const unit = Math.round(Math.max(36, Math.min(60, Math.min(vw, vh) * 0.12)));
   const m = Math.round(unit * 0.25);
   const b = Math.round(unit * 1.5); // the button size
   const side = Math.max(inset.l, inset.r) + 2 * b + 3 * m; // the arrow pad's column, the same on the right
-  const beside: Rect = { x: side, y: inset.t, w: vw - 2 * side, h: vh - inset.t - inset.b };
-  const above: Rect = { x: inset.l, y: inset.t, w: vw - inset.l - inset.r, h: vh - inset.t - inset.b - b - 2 * m };
-  const scale = (r: Rect) => Math.max(0, Math.min(r.w / W, r.h / H));
-  const landscape = scale(beside) >= scale(above);
-  const area = landscape ? beside : above;
-  const s = scale(area);
-  const game = { x: area.x + (area.w - W * s) / 2, y: area.y + (area.h - H * s) / 2, w: W * s, h: H * s };
+  const landscape = vw >= vh;
+  const [area, pw, ph]: [Rect, number, number] = landscape
+    ? [{ x: side, y: inset.t, w: vw - 2 * side, h: vh - inset.t - inset.b }, W, H]
+    : [{ x: inset.l, y: inset.t, w: vw - inset.l - inset.r, h: vh - inset.t - inset.b - b - 2 * m }, PW, PH];
+  const s = Math.max(0, Math.min(area.w / pw, area.h / ph));
+  const game = { x: area.x + (area.w - pw * s) / 2, y: area.y + (area.h - ph * s) / 2, w: pw * s, h: ph * s };
   const y = vh - inset.b - m - b;
   const left = { x: inset.l + m, y, w: b, h: b };
   const fire = { x: vw - inset.r - m - b, y, w: b, h: b };
   return {
     game,
+    portrait: !landscape,
     left,
     right: { ...left, x: left.x + b + m },
     fire,

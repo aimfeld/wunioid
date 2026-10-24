@@ -101,6 +101,11 @@
   session (Dark Planet escapes it through its music element); `sfx.ts` asks for `navigator.audioSession.type =
   'playback'` (Safari 16.4+) and also resumes from iOS's "interrupted" state. Confirmed on the iPhone: sounds
   play, no zoom on a double tap (user).
+- [x] Phone portrait layout (session 5, decision 10): portrait is the default orientation (manifest, and the touch
+  fullscreen button locks it where the browser can). In a portrait window with the touch buttons, Classic shows
+  only the playfield (`Rahmen`'s 428 px, full width) under a HUD strip (`Lifes` left, `Score` centre, `Level`
+  right, no FPS); a landscape window keeps the whole 640 × 480 picture beside the buttons.
+- [ ] Try the phone portrait layout on a phone.
 - [ ] Try the touch buttons on a phone; try a gamepad.
 - [ ] Open questions for the user: (1) mouse: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?
@@ -111,8 +116,8 @@
 - [ ] Interpolated motion at the display's refresh rate; effects.
 - [ ] Finish the HUD (everything outside the playfield; user, session 4): the original never finished it (plain
   `FPS` / `Lifes` / `Score` / `Level` text at x 500 on black). Make it beautiful, in a style consistent with the
-  original's graphics (the playfield frame, stones, capsules). Idea: in portrait on a phone, put it above the
-  playfield so the playfield can fill the width (Classic shows the whole 640 × 480 picture, at ~0.6× on a phone).
+  original's graphics (the playfield frame, stones, capsules). In portrait on a phone it is a strip above the
+  playfield, as Classic's (decision 10).
 - [ ] Switching between Classic and Remastered at any time.
 
 ### Phase 4: Editors and release
@@ -134,3 +139,5 @@
    buttons (session 4).
 9. Remastered mode gets a finished, good-looking HUD in a style consistent with the original
    (session 4).
+10. Phones default to portrait. There, even Classic diverges from the original: no FPS counter, `Lifes` /
+    `Score` / `Level` in a strip above the playfield, and the playfield at the full width (session 5).

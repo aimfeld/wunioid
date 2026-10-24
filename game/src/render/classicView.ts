@@ -1,8 +1,10 @@
 // The Classic picture: the original's 640 x 480 surface, drawn as DelphiX does (SpriteEngine.Draw sorted by Z,
 // sprites at Trunc(X), Trunc(Y), the pattern Trunc(AnimPos)), then the HUD (TForm1.DrawHud 0x41b560). PixiJS
 // shows it at the largest integer scale that fits the window, with nearest-neighbour sampling.
+// In a portrait window on a phone (the remake, user) it shows only the playfield, under a strip with the HUD (no
+// FPS), so the playfield can take the full width.
 
-import { Application, Sprite as PixiSprite, Texture } from 'pixi.js';
+import { Application, Rectangle, Sprite as PixiSprite, Texture } from 'pixi.js';
 import type { Manifest } from '../data';
 import type { Rect } from '../input/touch';
 import { Tiles } from '../sim/sprites';
@@ -14,6 +16,10 @@ export const H = 480;
 const HUD_X = 500;
 /** MS Sans Serif is a bitmap font: no smoothing. Size 12 pt at 96 dpi is 16 px; the face is approximated. */
 const HUD_FONT = '16px "MS Sans Serif", "Microsoft Sans Serif", Arial, sans-serif';
+/** The phone portrait picture: the playfield frame's width (`Rahmen`, 428 x 480) under the HUD strip. */
+export const FIELD_W = 428;
+export const STRIP_H = 24;
+const STRIP_PAD = 6;
 
 export type Images = Record<string, HTMLImageElement>;
 
@@ -54,9 +60,15 @@ export class ClassicView {
   private readonly canvas = document.createElement('canvas');
   private readonly ctx: CanvasRenderingContext2D;
   private readonly texture: Texture;
+  private readonly field: Texture; // the playfield part of the picture
   private readonly sprite: PixiSprite;
+  private readonly stripCanvas = document.createElement('canvas');
+  private readonly stripCtx: CanvasRenderingContext2D;
+  private readonly stripTexture: Texture;
+  private readonly stripSprite: PixiSprite;
   private readonly hud = [new TextLine(), new TextLine(), new TextLine(), new TextLine()];
   private area: Rect | null = null;
+  private strip = false;
 
   private constructor(private readonly app: Application, private readonly images: Images, private readonly manifest: Manifest) {
     this.canvas.width = W;
@@ -65,8 +77,16 @@ export class ClassicView {
     this.ctx.imageSmoothingEnabled = false;
     this.texture = Texture.from(this.canvas);
     this.texture.source.scaleMode = 'nearest';
+    this.field = new Texture({ source: this.texture.source, frame: new Rectangle(0, 0, FIELD_W, H) });
     this.sprite = new PixiSprite(this.texture);
-    app.stage.addChild(this.sprite);
+    this.stripCanvas.width = FIELD_W;
+    this.stripCanvas.height = STRIP_H;
+    this.stripCtx = this.stripCanvas.getContext('2d')!;
+    this.stripTexture = Texture.from(this.stripCanvas);
+    this.stripTexture.source.scaleMode = 'nearest';
+    this.stripSprite = new PixiSprite(this.stripTexture);
+    this.stripSprite.visible = false;
+    app.stage.addChild(this.sprite, this.stripSprite);
     window.addEventListener('resize', () => this.layout());
     this.layout();
   }
@@ -84,18 +104,27 @@ export class ClassicView {
     return this.app.canvas;
   }
 
-  /** The window part to draw the picture in (CSS pixels; the touch controls take the rest), or null: all of it. */
-  setArea(area: Rect | null): void {
+  /**
+   * The window part to draw the picture in (CSS pixels; the touch controls take the rest), or null: all of it.
+   * `strip`: the playfield alone, with the HUD strip above it (phone portrait).
+   */
+  setArea(area: Rect | null, strip = false): void {
     const a = this.area;
-    if (a === area || (a && area && a.x === area.x && a.y === area.y && a.w === area.w && a.h === area.h)) return;
+    if (strip === this.strip &&
+      (a === area || (a && area && a.x === area.x && a.y === area.y && a.w === area.w && a.h === area.h))) return;
     this.area = area && { ...area };
+    this.strip = strip;
+    this.sprite.texture = strip ? this.field : this.texture;
+    this.stripSprite.visible = strip;
     this.layout();
   }
 
-  /** Where the picture is, in CSS pixels. */
+  /** Where the picture is (the playfield and the strip in phone portrait), in CSS pixels. */
   get picture(): Rect {
     const s = this.sprite.scale.x;
-    return { x: this.sprite.x, y: this.sprite.y, w: W * s, h: H * s };
+    return this.strip
+      ? { x: this.sprite.x, y: this.stripSprite.y, w: FIELD_W * s, h: (H + STRIP_H) * s }
+      : { x: this.sprite.x, y: this.sprite.y, w: W * s, h: H * s };
   }
 
   /** Client coordinates to picture pixels. */
@@ -111,11 +140,15 @@ export class ClassicView {
   private layout(): void {
     const dpr = window.devicePixelRatio || 1;
     const a = this.area ?? { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
-    const fit = Math.min((a.w * dpr) / W, (a.h * dpr) / H);
+    const [pw, ph] = this.strip ? [FIELD_W, H + STRIP_H] : [W, H];
+    const fit = Math.min((a.w * dpr) / pw, (a.h * dpr) / ph);
     const scale = Math.floor(fit) >= 1 && Math.floor(fit) / fit >= 0.75 ? Math.floor(fit) : fit;
-    this.sprite.scale.set(scale / dpr);
-    this.sprite.x = Math.floor(a.x + (a.w - (W * scale) / dpr) / 2);
-    this.sprite.y = Math.floor(a.y + (a.h - (H * scale) / dpr) / 2);
+    const s = scale / dpr;
+    const x = Math.floor(a.x + (a.w - pw * s) / 2), y = Math.floor(a.y + (a.h - ph * s) / 2);
+    this.sprite.scale.set(s);
+    this.stripSprite.scale.set(s);
+    this.stripSprite.position.set(x, y);
+    this.sprite.position.set(x, this.strip ? y + STRIP_H * s : y);
   }
 
   /** One pattern of an image list item at (x, y). */
@@ -140,8 +173,9 @@ export class ClassicView {
           }
         } else this.drawPattern(s.image, s.frame, x, y);
       }
-      if (w.state === GameState.Course || w.state === GameState.Test) this.drawHud(w, fps);
+      if ((w.state === GameState.Course || w.state === GameState.Test) && !this.strip) this.drawHud(w, fps);
     }
+    if (this.strip) this.drawStrip(w);
     this.texture.source.update();
     this.app.render();
   }
@@ -153,5 +187,23 @@ export class ClassicView {
       if (w.state === GameState.Course) lines.push(`Level: ${w.levelIndex}`);
     }
     lines.forEach((text, i) => this.ctx.drawImage(this.hud[i].draw(text), HUD_X, 30 + 30 * i));
+  }
+
+  /** Phone portrait: the HUD without FPS in one row, lives on the left, score in the middle, level on the right. */
+  private drawStrip(w: World): void {
+    const ctx = this.stripCtx;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, FIELD_W, STRIP_H);
+    if ((w.state === GameState.Course || w.state === GameState.Test) && w.paddle) {
+      const y = (STRIP_H - 20) / 2;
+      const lives = this.hud[1].draw(`Lifes: ${w.lives}`), score = this.hud[2].draw(`Score: ${w.score}`);
+      ctx.drawImage(lives, STRIP_PAD, y);
+      ctx.drawImage(score, Math.round((FIELD_W - score.width) / 2), y);
+      if (w.state === GameState.Course) {
+        const level = this.hud[3].draw(`Level: ${w.levelIndex}`);
+        ctx.drawImage(level, FIELD_W - STRIP_PAD - level.width, y);
+      }
+    }
+    this.stripTexture.source.update();
   }
 }
