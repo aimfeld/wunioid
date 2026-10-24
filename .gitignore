@@ -1,0 +1,12 @@
+# Tool output from tools/extract_assets.py
+original_source/extracted/
+
+# Local tool/IDE state
+.claude/settings.local.json
+.idea/
+.rea/
+__pycache__/
+
+# Build output
+node_modules/
+dist/
