@@ -87,6 +87,11 @@
   meet, the thumb slides between them), the right half Fire. The picture moves beside the buttons in landscape,
   above them in portrait. Shown on a coarse-pointer device and after a touch, hidden after a mouse click. Touch
   dragging removed (`pointer.ts` → `mouse.ts`, mouse only). `tools/screenshot.mjs` takes `SIZE=WxH TOUCH=1`.
+- [x] Auto-update of the installed app (session 4, as Dark Planet's `registerOffline`): a start from the cache asks
+  the server first and reloads into a new version ("Loading update…"); the app asks again when it comes back to the
+  screen and hourly, and reloads once a new version has taken over and the game has no progress (first level, score
+  0, no dialog), at the latest when the next game starts. The touch fullscreen button is hidden in the installed app
+  (fullscreen already). Checked against `vite preview` in headless Chrome.
 - [ ] Try the touch buttons on a phone; try a gamepad.
 - [ ] Open questions for the user: (1) mouse: steer at the paddle's own speed (now) or move the paddle
   straight to the pointer? (2) the menu bar: always there (faded until hovered, now) or hidden in fullscreen?

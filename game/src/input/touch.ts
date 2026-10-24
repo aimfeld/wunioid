@@ -84,17 +84,18 @@ export class TouchControls {
   private tapped = new Set<Dir | 'fire'>(); // pressed since the last sample
   private sampled = new Set<Dir | 'fire'>();
 
-  constructor(parent: HTMLElement, onFullscreen: () => void) {
+  /** `onFullscreen`: none where the page can't go fullscreen or already is (the installed app). */
+  constructor(parent: HTMLElement, onFullscreen?: () => void) {
     const style = document.createElement('style');
     style.textContent = CSS;
     document.head.appendChild(style);
     this.root.id = 'touch';
-    if (document.fullscreenEnabled) {
+    if (onFullscreen && document.fullscreenEnabled) {
       this.fullscreen.addEventListener('pointerup', (e) => {
         e.stopPropagation();
         onFullscreen();
       });
-    } else this.fullscreen.remove(); // iPhone Safari
+    } else this.fullscreen.remove(); // iPhone Safari, the installed app
     parent.appendChild(this.root);
     this.root.addEventListener('pointerdown', (e) => this.press(e));
     this.root.addEventListener('pointermove', (e) => this.move(e));

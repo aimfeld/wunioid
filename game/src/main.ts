@@ -33,18 +33,59 @@ function storeScores(file: string, scores: HighScore[]): void {
   }
 }
 
+const UPDATE_CHECK_MS = 4000; // how long a start waits for the server's sw.js before going on (offline, slow network)
+const UPDATE_INSTALL_MS = 20000; // how long it waits for a new version to install
+const UPDATE_INTERVAL_MS = 60 * 60 * 1000;
+
+const within = <T>(promise: Promise<T>, ms: number) =>
+  Promise.race([promise, new Promise<void>((resolve) => setTimeout(resolve, ms))]);
+
 /**
- * The service worker (sw.js, written by the build) caches the game for the installed app and offline play. A new
- * version installs in the background and is used from the next start. Also asks to keep the storage (high scores).
+ * The service worker (sw.js, written by the build) caches the game for the installed app and offline play. Also
+ * asks to keep the storage (high scores). (After Dark Planet's.)
+ *
+ * Updates: browsers look for a new sw.js only when a page is opened, and an installed app on a phone is mostly
+ * resumed rather than restarted; the new version then took over in the background and only showed at the start
+ * after that. So a start that already runs from the cache asks the server first and, if there is a new version,
+ * waits for it and reloads ("Loading update…"). The app also asks whenever it comes back to the screen and every
+ * hour; `onUpdate` is called when a new version has taken over, and the caller reloads at a moment that loses nothing.
  */
-function registerOffline(): void {
+async function registerOffline(status: HTMLElement, onUpdate: () => void): Promise<void> {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
   navigator.storage?.persist?.().catch(() => undefined);
-  navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js', { updateViaCache: 'none' }).then((reg) => {
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) reg.update().catch(() => undefined);
+  const sw = navigator.serviceWorker;
+  // The first install also takes over the page (clients.claim); only a change of controller is an update.
+  let controlled = sw.controller !== null;
+  let updated = false;
+  const changed = new Promise<void>((resolve) => {
+    sw.addEventListener('controllerchange', () => {
+      if (controlled) {
+        updated = true;
+        resolve();
+        onUpdate();
+      }
+      controlled = true;
     });
-  }, (e) => console.warn('no service worker:', e));
+  });
+  const reg = await sw.register(import.meta.env.BASE_URL + 'sw.js', { updateViaCache: 'none' }).catch((e) => {
+    console.warn('no service worker:', e);
+  });
+  if (!reg) return;
+  const check = () => reg.update().catch(() => undefined);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) void check();
+  });
+  setInterval(() => void check(), UPDATE_INTERVAL_MS);
+  if (!controlled) return; // the first visit: this page is the newest version
+  await within(check(), UPDATE_CHECK_MS);
+  if (!updated && !reg.installing && !reg.waiting) return;
+  status.textContent = 'Loading update…';
+  await within(changed, UPDATE_INSTALL_MS);
+  if (updated) {
+    location.reload();
+    await new Promise(() => undefined); // the page is going away
+  }
+  status.textContent = 'Loading…';
 }
 
 /** The notch and the home bar (env(safe-area-inset-*)), from Dark Planet. */
@@ -84,6 +125,13 @@ const merge = (...inputs: Input[]): Input => ({
 async function main(): Promise<void> {
   const status = document.getElementById('status')!;
   status.textContent = 'Loading…';
+  // A new version took over: reload where nothing is lost (once the game exists: no progress and no dialog).
+  let updateReady = false;
+  let canReload = () => true;
+  await registerOffline(status, () => {
+    updateReady = true;
+    if (canReload()) location.reload();
+  });
   const base = import.meta.env.BASE_URL + 'data/';
   const data = await loadGameData({
     json: async (name) => (await fetch(base + name)).json(),
@@ -102,7 +150,6 @@ async function main(): Promise<void> {
     }),
   ]);
   status.textContent = '';
-  registerOffline();
 
   const world = new World(data.manifest.images, data.files, Date.now() | 0); // Randomize
   world.onHighScores = (file, scores) => {
@@ -112,7 +159,10 @@ async function main(): Promise<void> {
   const view = await ClassicView.create(document.getElementById('app')!, images, data.manifest);
   const keys = new Keyboard(window);
   const mouse = new Mouse(view.element, (x, y) => view.toScreen(x, y));
-  const touch = new TouchControls(document.body, () => void toggleFullscreen().catch(() => undefined));
+  // The installed app is fullscreen already (manifest); a second, element fullscreen would only add a way out to learn.
+  const installedFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+  const touch = new TouchControls(document.body,
+    installedFullscreen ? undefined : () => void toggleFullscreen().catch(() => undefined));
   const layout = layoutCache();
   // The touch buttons show on a phone or tablet, and from the last touch until the next mouse click.
   let touchUsed = window.matchMedia('(pointer: coarse)').matches;
@@ -127,6 +177,9 @@ async function main(): Promise<void> {
   let last = performance.now();
   let paused = false;
   let dialog = false; // a dialog has the keyboard and the game waits
+  // no game yet, or a course game on its first level with no points (also a new game after game over)
+  canReload = () => !dialog && (world.state === GameState.None ||
+    (world.state === GameState.Course && world.levelIndex === 0 && world.score === 0));
   const setPaused = (p: boolean) => {
     paused = p;
     sfx?.setHidden(p || document.hidden);
@@ -226,6 +279,10 @@ async function main(): Promise<void> {
       fps = ticksThisSecond;
       ticksThisSecond = 0;
       second = now;
+    }
+    if (updateReady && canReload()) {
+      location.reload();
+      return;
     }
     if (world.state === GameState.CourseEditor && world.courseEditorOpen && !dialog) void openCourseEditor();
     const playing = world.state === GameState.Course || world.state === GameState.Test;
