@@ -2,12 +2,13 @@
 // x 500 on black). Here it is a panel beside the playfield, in the playfield's white marble frame, with the
 // title, the score, the course's best score, the spare lives as small paddles, the level and course, and bars for
 // the power-ups that run out (glue, gun, piercing, mega ball). In a phone's portrait window it is a strip above
-// the playfield (decision 10): lives, score and level. No FPS.
+// the playfield (decision 10): lives, score and level. No FPS. In the level editor the panel holds the palette.
 
 import { BlurFilter, Container, FillGradient, Graphics, Sprite, Text, type TextStyleOptions } from 'pixi.js';
 import { GameState, type World } from '../../sim/world';
 import { courseTitle } from '../../ui/menu';
 import type { RemasterAssets } from './assets';
+import { EditorPalette } from './palette';
 
 export const FONT = 'Comic Neue';
 export const PANEL_X = 428;
@@ -56,6 +57,10 @@ export class Hud {
   private readonly bars: { row: Container; fill: Graphics; color: number }[] = [];
   private readonly hint = text('Esc  menu   ·   P  pause', { ...LABEL, fontSize: 11, letterSpacing: 1, fill: 0x6c74b8 });
   private readonly game = new Container(); // what only shows in a game
+  private readonly heading = new Container(); // the title, not in the editor
+  private readonly palette: EditorPalette;
+  /** The editor's eraser is the brush (the remake's, main.ts). */
+  erase = false;
   // the strip
   private readonly sScore = text('0', { ...VALUE, fontSize: 22 });
   private readonly sLevel = text('', { ...SMALL, fontSize: 15 }, 1);
@@ -93,7 +98,9 @@ export class Hud {
     }
     const sub = text('REMASTERED', { ...LABEL, fontSize: 10, letterSpacing: 4, fill: 0xc8ccff });
     sub.position.set(CX, 72);
-    this.panel.addChild(bg, rim, title, sub, this.game, this.hint);
+    this.palette = new EditorPalette(assets);
+    this.heading.addChild(title, sub);
+    this.panel.addChild(bg, rim, this.heading, this.game, this.hint, this.palette.root);
     const label = (s: string, y: number) => {
       const t = text(s, LABEL);
       t.position.set(CX, y);
@@ -124,7 +131,7 @@ export class Hud {
       this.bars.push({ row, fill, color: p.color });
     });
     this.hint.position.set(CX, 442);
-    this.texts.push(sub, this.score, this.best, this.level, this.course, this.moreLives, this.hint);
+    this.texts.push(sub, this.score, this.best, this.level, this.course, this.moreLives, this.hint, ...this.palette.texts);
 
     // the strip
     const sbg = new Graphics()
@@ -151,12 +158,22 @@ export class Hud {
   }
 
   set touch(on: boolean) {
-    this.hint.visible = !on;
+    this.touchUsed = on;
+    this.palette.touch = on;
   }
+
+  private touchUsed = false;
 
   update(w: World): void {
     const playing = (w.state === GameState.Course || w.state === GameState.Test) && w.paddle !== null;
+    const editing = w.state === GameState.Editor;
     this.game.visible = this.sGame.visible = playing;
+    this.palette.root.visible = editing;
+    this.heading.visible = !editing;
+    this.hint.visible = !editing && !this.touchUsed;
+    const hint = w.state === GameState.Test ? 'Esc  editor   ·   P  pause' : 'Esc  menu   ·   P  pause'; // Esc ends a test
+    if (this.hint.text !== hint) this.hint.text = hint;
+    if (editing) this.palette.update(w, this.erase);
     if (!playing) return;
     // the score counts up
     const d = w.score - this.shownScore;

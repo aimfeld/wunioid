@@ -259,4 +259,4 @@ the list but nothing plays them (O: the names don't occur in the code section).
 - Tick rate: the remake uses 45.45 Hz (decision 6). Check the `FPS:` display in the running game.
 - Ball animation after piercing ends (stays on frame 20?).
 - `Level: 0` on the first level.
-- The editor rules (palette, clicks): Phase 4.
+- The editors: `docs/re-notes.md` (Level editor, Course editor).

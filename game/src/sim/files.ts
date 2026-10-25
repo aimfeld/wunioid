@@ -35,6 +35,7 @@ function writeShortString(b: Uint8Array, at: number, s: string): void {
 export function parseCourse(bytes: Uint8Array): string[] {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const n = view.getUint32(0, true);
+  if (bytes.length !== 4 + SHORT_STRING * n) throw new Error(`a course of ${n} levels has ${4 + SHORT_STRING * n} bytes, not ${bytes.length}`);
   return Array.from({ length: n }, (_, i) => readShortString(bytes, 4 + SHORT_STRING * i));
 }
 

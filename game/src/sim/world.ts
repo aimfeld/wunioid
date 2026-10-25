@@ -2,10 +2,10 @@
 // One World.tick() is one DXTimer event. The original's nested loops (blocking banners, the "Well done" phase)
 // draw a frame per iteration; here they run one iteration per tick (decision 7), as a generator.
 
-import { COLS, cellOffset, emptyLevel, highScoreFile, levelTile, ROWS, type HighScore, type Level } from './files';
+import { COLS, cellOffset, emptyLevel, highScoreFile, LEVEL_SIZE, levelTile, ROWS, type HighScore, type Level } from './files';
 import { DelphiRandom, normAngle } from './numeric';
 import {
-  Ball, Frame, Paddle, PaddleKind, Sprite, Stone, StoneAttr, StoneKind, TextSprite, Tiles, type Bonus, type Shot,
+  Ball, Creator, Frame, Paddle, PaddleKind, Sprite, Stone, StoneAttr, StoneKind, TextSprite, Tiles, type Bonus, type Shot,
 } from './sprites';
 
 export interface ImageInfo {
@@ -43,8 +43,11 @@ export interface Files {
 const GRID_COLS = 15; // TStone[15][19]: cols 1…13, rows 1…17 used, the border stays nil
 const GRID_ROWS = 19;
 export const DEFAULT_COURSE = 'default.cse';
-/** TCourseEditor.AddHighScore keeps nothing for an unsaved course. */
-const NO_NAME = 'NoName';
+/** The course of Course ▸ New until it is saved; TCourseEditor.AddHighScore keeps nothing for it. */
+export const NO_NAME = 'NoName';
+/** The course editor's messages (DeleteClick 0x41ced8, Saveas1Click 0x41d104), caption 'Error'. */
+export const LEAVE_ONE_LEVEL = 'You have to leave one level at least!';
+export const ADD_ONE_LEVEL = 'You have to add one level at least!';
 
 export class World {
   readonly rng: DelphiRandom;
@@ -71,6 +74,10 @@ export class World {
   levelIndex = 0; // in the course, 0-based
   endCollected = false; // the End capsule (0x4212ec)
   levelDonePhase = false; // "Well done": capsules can't be collected (0x4212f4)
+  /** The level editor's brush (0x42111c): a stone kind 1…13, or an attribute 1…4 when `brushAttr`. */
+  brush = 1;
+  /** The brush is an attribute (0x42111d): picked in the palette's Attribs row. */
+  brushAttr = false;
 
   state = GameState.None;
   /** A state to start on the next tick (0x41e278); 1 at launch: a course game starts at once. */
@@ -250,10 +257,12 @@ export class World {
     }
   }
 
-  /** TForm1.CreateBackground (0x41aed0). */
+  /** TForm1.CreateBackground (0x41aed0): the tile sprite is made once per level, the editor only changes its image. */
   private createBackground(): void {
     const tile = levelTile(this.level);
-    if (tile !== 0) this.tiles = new Tiles(this, tile);
+    if (tile === 0) return;
+    if (this.tiles) this.tiles.setImage(`Tile${tile}`);
+    else this.tiles = new Tiles(this, tile);
   }
 
   /** TForm1.StartLevel (0x41a5dc). */
@@ -305,17 +314,145 @@ export class World {
     this.startLevel();
   }
 
-  /** TForm1.StartEditor (0x41a940): state 3, the level with its attribute labels (editing is Phase 4). */
+  /** TForm1.StartEditor (0x41a940): state 3, the level with its attribute labels, the palette at 460, 50. */
   private startEditor(): void {
     this.clearLevel();
     new Frame(this);
+    this.brush = 1;
+    this.brushAttr = false;
     this.createStones();
     this.createBackground();
+    const palette = new Creator(this); // after Draw.Cursor := crDefault
+    palette.x = 460;
+    palette.y = 50;
+  }
+
+  /** A stone and its attribute label die (DrawMouseDown). */
+  private removeStone(s: Stone): void {
+    if (s.label) {
+      s.label.die();
+      s.label = null;
+    }
+    s.die();
+  }
+
+  /**
+   * TForm1.DrawMouseDown (0x41aad4), state 3 only: a click in the playfield sets a stone of the brush's kind (left)
+   * or clears the cell (right); with an attribute brush it sets the stone's attribute (left: not Bonus on a non-gem,
+   * Move on a Goldie or Hike on a BeBack) or clears it (right). A click in the palette picks the brush or the
+   * background. (x, y) in picture px: the original adds the menu bar's 20 px to the Draw control's Y, as the
+   * fullscreen picture starts above the control. The cell is taken without a bounds check, as in the original;
+   * the bounds keep it in 1…13, 1…17.
+   */
+  editorMouseDown(x: number, y: number, right: boolean): void {
+    if (this.state !== GameState.Editor) return;
+    const col = Math.trunc((x - 19) / 30) + 1; // ColOfX (0x41aa9c)
+    const row = Math.trunc((y - 19) / 15) + 1; // RowOfY (0x41aab8)
+    if (x > 14 && x < 404 && y > 14 && y < 269) {
+      const o = cellOffset(col, row);
+      if (!this.brushAttr) {
+        const s = this.cell(col, row);
+        if (s) {
+          this.removeStone(s);
+          this.setCell(col, row, null);
+          this.level[o] = 0;
+          this.level[o + 1] = 0;
+        }
+        if (!right) {
+          this.level[o] = this.brush;
+          this.level[o + 1] = 0;
+          this.setCell(col, row, new Stone(this, 0, row, col));
+        }
+      }
+      const s = this.cell(col, row);
+      if (this.brushAttr && s) {
+        this.removeStone(s);
+        if (right) this.level[o + 1] = StoneAttr.None;
+        else if ((this.brush !== StoneAttr.Bonus || (s.kind >= StoneKind.GemRed && s.kind <= StoneKind.GemViolet)) &&
+          (this.brush !== StoneAttr.Move || s.kind !== StoneKind.Goldie) &&
+          (this.brush !== StoneAttr.Hike || s.kind !== StoneKind.BeBack)) this.level[o + 1] = this.brush;
+        this.setCell(col, row, new Stone(this, 0, row, col));
+      }
+    }
+    // the palette: 13 stones in rows of 4 (35 x 23 px), the 4 attributes, 9 backgrounds in rows of 3 (45 x 47 px)
+    if (x > 460 && x < 600 && y > 75 && y < 167) {
+      const b = ((Math.trunc((y - 75) / 23) << 2) + Math.trunc((x - 460) / 35) + 1) & 0xff;
+      if (b > 0 && b <= 13) {
+        this.brush = b;
+        this.brushAttr = false;
+      }
+    }
+    if (x > 460 && x < 600 && y > 191 && y < 214) {
+      const b = ((Math.trunc((y - 191) / 23) << 2) + Math.trunc((x - 460) / 35) + 1) & 0xff;
+      if (b > 0 && b <= 4) {
+        this.brush = b;
+        this.brushAttr = true;
+      }
+    }
+    if (x > 460 && x < 595 && y > 244 && y < 385) {
+      const t = (Math.trunc((y - 244) / 47) * 3 + Math.trunc((x - 460) / 45) + 1) & 0xff;
+      if (t > 0 && t <= 9) {
+        this.level[LEVEL_SIZE - 1] = t;
+        this.createBackground();
+      }
+    }
+  }
+
+  /** Level ▸ New (New1Click 0x41b7ec): an empty level buffer without a background, then the editor. */
+  newLevel(): void {
+    this.level.fill(0);
+    this.request(GameState.Editor);
   }
 
   /** TForm1.ShowCourseEditor (0x41a9b8): the course editor dialog, the game is hidden. */
   private showCourseEditor(): void {
     this.courseEditorOpen = true;
+  }
+
+  // ---- the course editor (TCourseEditor): its level list is the course being played
+
+  /** AddClick (0x41cdd0): a level file at the end of the list (the name cut to 50 characters). */
+  courseAdd(level: string): void {
+    this.course.levels.push(level.slice(0, 50));
+  }
+
+  /** DeleteClick (0x41ced8): the entry at `i`, but never the last one (the message, else null). */
+  courseDelete(i: number): string | null {
+    if (i < 0 || i >= this.course.levels.length) return null;
+    if (this.course.levels.length < 2) return LEAVE_ONE_LEVEL;
+    this.course.levels.splice(i, 1);
+    return null;
+  }
+
+  /** MoveUpClick / MoveDownClick (0x41cf98, 0x41d014): the entry at `i` one place up (−1) or down; its new index. */
+  courseMove(i: number, d: -1 | 1): number {
+    const l = this.course.levels;
+    if (i < 0 || i >= l.length || i + d < 0 || i + d >= l.length) return i;
+    l.splice(i + d, 0, ...l.splice(i, 1)); // TStrings.Move
+    return i + d;
+  }
+
+  /**
+   * Course ▸ New (New1Click 0x41d0a0): no levels, no high scores, course NoName. The original clears the table with
+   * ClearHighScores before the name changes, which saves the empty table over the previous course's high scores;
+   * the remake doesn't save it.
+   */
+  courseNew(): void {
+    this.course.levels = [];
+    this.highScores = [];
+    this.course.name = NO_NAME;
+  }
+
+  /** TCourseEditor.SaveCourseAs (0x41c318) after the dialog: the course takes the file's name (scores stay). */
+  courseSaved(name: string): void {
+    this.files.courses.set(name, [...this.course.levels]);
+    this.course.name = name;
+  }
+
+  /** HighScoreReset (ClearHighScores 0x41cd40): the table emptied and saved (not for NoName). */
+  clearHighScores(): void {
+    this.highScores = [];
+    if (this.course.name !== NO_NAME) this.onHighScores?.(highScoreFile(this.course.name), this.highScores);
   }
 
   // ---- high scores (CourseEdit)
@@ -443,6 +580,8 @@ export class World {
       if (this.state === GameState.Course || this.state === GameState.Test) {
         this.flow = this.playTick();
         if (this.flow.next().done) this.flow = null;
+      } else if (this.state === GameState.Editor) {
+        this.freeDead(); // EditorTick (0x41a9f4): SpriteEngine.Dead, nothing moves
       } else if (this.state === GameState.CourseEditor) {
         // CourseEditorTick (0x41a9dc): closing the dialog starts a new game
         if (!this.courseEditorOpen) this.requested = GameState.Course;

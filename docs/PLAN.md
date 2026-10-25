@@ -53,7 +53,7 @@
 - [x] Capsules: drop tables per gem colour, all 16 effects and durations.
 - [x] Lives, scoring, level end, course end, game over, banners and sounds.
 - [x] High scores, course files (`docs/file-formats.md`). Editors: only the state machine and menus so far;
-  the level editor's mouse handling (DrawMouseDown 0x41aad4) is left for Phase 4.
+  the level editor's mouse handling (DrawMouseDown 0x41aad4) is left for Phase 4 (done in session 10).
 - [x] `docs/gameplay-spec.md`, `docs/file-formats.md`, `docs/re-notes.md`.
 - [x] Decided (user, session 2): fixed tick 1000/22 ≈ 45.45 Hz; blocking banners and the "Well done" phase
   run at the tick rate too (decisions 6 and 7).
@@ -72,7 +72,7 @@
 - [x] Classic renderer `src/render/classicView.ts` (640×480 canvas drawn like DelphiX, PixiJS integer scale), HUD,
   banners; sounds `src/audio/sfx.ts` (each play a new voice, as the original).
 - [x] Courses and high scores: course game, Game ▸ New / Pause, Level ▸ Test, Course ▸ Load / Editor, the name
-  prompt and the course editor dialog (view only; its editing is Phase 4). High scores in `localStorage`, starting
+  prompt and the course editor dialog (view only until Phase 4). High scores in `localStorage`, starting
   from the 2011 tables. The name prompt (both modes) is filled with the last name entered, kept in
   `wunioid.settings` (user; a remake convenience, the original's InputBox default is not verified).
 - [x] Input: the original keys, gamepad, mouse and touch (target steering at the paddle's 6 px/tick, see open
@@ -187,7 +187,7 @@ Remastered is the default (user, session 6). First version in place; needs the u
   [known-issues.md](known-issues.md).
 - [ ] Banners' and HUD's font: Comic Neue stands in for the original's Comic Sans look; check with the user.
 - [ ] Maybe: re-render the background tiles too (they are upscaled, soft on large screens); a sound for menu
-  moves; the level editor's palette in the remastered look (Phase 4).
+  moves. (The level editor's palette in the remastered look: done, Phase 4.)
 
 - [x] Music plan (session 9, decision 14): approach, and the *Revenge of Doh* title music transcribed from a
   YouTube recording (120 BPM, G minor, bass Gm–F | E♭–D, the hook): [music.md](music.md).
@@ -209,9 +209,32 @@ Remastered is the default (user, session 6). First version in place; needs the u
 - [ ] Level tracks 1–6.
 - [ ] Service worker: cache the music best effort, as Dark Planet's media.
 
-### Phase 4: Editors and release
-- [ ] Level editor and course editor in the browser, as in the original, with `.lev`/`.cse` import and export
-  and storage in `localStorage`.
+### Phase 4: Editors and release 🔄 (session 10, 2026-10-25)
+User (session 10): the editors didn't work in the remake (they were view only); wanted in both modes.
+- [x] Read the editors in the original (`docs/re-notes.md`, Level editor and Course editor): DrawMouseDown and the
+  `Creator` palette, Level ▸ New / Edit / Save as / Load, every course editor handler and its messages.
+- [x] Simulation (`world.ts`): StartEditor with the palette sprite (`Creator`), EditorTick, `editorMouseDown`
+  (DrawMouseDown), `newLevel`, CreateBackground reusing the tile sprite, the course editor's operations
+  (add, delete, move, new, save, reset). `test/editor.test.ts`.
+- [x] Player files (`src/storage.ts`): levels and courses saved in `localStorage` in the original formats, over
+  the shipped files of the same name; import of `.lev` / `.cse` files and download of any level or course.
+- [x] Classic: the Level menu works (New, Edit, Test, Save as, Load), the editor takes left and right clicks;
+  Windows-style Open / Save As dialogs (overwrite confirmation, plus the remake's Import… and Download); the
+  course editor's buttons and menus all work, with the original's messages.
+- [x] Remastered: Level editor and Course editor on the title screen; in the editor the HUD panel holds the
+  palette (re-rendered stones and tiles on the original's click rectangles, the brush and background marked, an
+  eraser for touch, Test and Menu buttons); Esc / Menu opens the editor menu (Back, Test, New, Load, Save as, Course
+  editor, Main menu); Esc in a test goes back to the editor; drag paints (the original takes clicks only);
+  Load level edits the level (the original tests it); a course editor screen (levels list, Up, Down, Delete,
+  Add, New, Open, Save as, Reset high scores, Play) and a file screen (load, save, import, download).
+- [x] User (session 10): drag paints in Classic too (deviation, the original takes clicks only); Remastered: a Test
+  button left of Menu under the palette, and Esc (or Start, the touch menu button) in a test game goes straight
+  back to the editor (the HUD hint says "Esc editor").
+- [x] Deviation (needs the user's OK): Course ▸ New doesn't save the emptied high-score table over the previous
+  course's (the original does, `docs/re-notes.md`).
+- [ ] **User:** try both editors (Classic and Remastered), on desktop and on a phone (landscape is the better way
+  to edit on a phone: in portrait the whole 640 × 480 picture is small).
+- [ ] Maybe: delete the player's own files; a hover mark in the Remastered palette.
 - [ ] README with screenshots, itch.io page.
 
 ## Decisions (user)

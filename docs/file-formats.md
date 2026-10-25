@@ -29,6 +29,11 @@ Loaded from the game directory (`LoadCourse` 0x41c898), saved by the course edit
 `default.cse` = 4 + 24 × 51 = 1228 bytes, `Mystery.cse` = 4 + 11 × 51 = 565 bytes. When a course is loaded,
 entries whose file doesn't exist in `Levels\` are dropped from the list.
 
+**In the remake** (`game/src/storage.ts`): the player's levels, courses and high scores are kept in
+`localStorage` in these same formats, base64, under `wunioid.level.<file>`, `wunioid.course.<file>` and
+`wunioid.scores.<file>`, over the shipped files of the same name. Imported files must have these sizes (443
+bytes for a level, 4 + 51 n for a course); downloads are the files as the original writes them.
+
 ## High scores `<course>scr`
 The name is `ChangeFileExt(course, 'scr')` with no dot: `default.cse` → `defaultscr`. Read by 0x41c58c,
 written by 0x41c128 after every new entry; course "NoName" has none.

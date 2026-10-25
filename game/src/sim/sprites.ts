@@ -43,6 +43,18 @@ export class Sprite {
     this.h = info.height;
   }
 
+  /**
+   * TImageSprite.GetDrawRect (0x40ea04): DelphiX draws the image centred in Width × Height, offset by
+   * (Width − image width) div 2. Zero unless the image was set without its size (the editor's labels).
+   */
+  get drawDx(): number {
+    return Math.trunc((this.w - this.world.images[this.image].width) / 2);
+  }
+
+  get drawDy(): number {
+    return Math.trunc((this.h - this.world.images[this.image].height) / 2);
+  }
+
   /** The image's pattern count (TPictureCollectionItem.PatternCount). */
   get patterns(): number {
     return this.world.images[this.image].frames;
@@ -123,6 +135,15 @@ export class Tiles extends Sprite {
   }
 
   override doMove(): void {} // TSprite.DoMove: nothing
+}
+
+/** TCreatorSprite (0x41aa14): the level editor's palette `Creator` (stones, attributes, backgrounds). */
+export class Creator extends Sprite {
+  constructor(world: World) {
+    super(world);
+    this.setImage('Creator');
+    this.setZ(2);
+  }
 }
 
 export const enum PaddleKind {
@@ -455,8 +476,9 @@ export class Stone extends Sprite {
     this.hits = STONE_HITS[k] ?? 0;
     if (this.counts() && hikeKind === 0) world.stonesLeft++;
     if (world.state === 3 && this.attr !== StoneAttr.None) {
+      // the image field is set directly, not its Width and Height (0): drawn at X − 15, Y − 7 (drawDx), on the stone
       const label = new Sprite(world);
-      label.setImage(ATTR_IMAGES[this.attr]);
+      label.image = ATTR_IMAGES[this.attr];
       label.x = this.x + 15;
       label.y = this.y + 7;
       label.setZ(3);

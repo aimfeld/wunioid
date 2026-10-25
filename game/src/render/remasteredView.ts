@@ -18,7 +18,7 @@
 
 import { Application, BlurFilter, Container, Graphics, Sprite as PixiSprite, TilingSprite } from 'pixi.js';
 import type { Rect } from '../input/touch';
-import { Ball, Bonus, Frame, MOVE_COUNT, Paddle, Shatter, Shot, Stone, StoneAttr, StoneKind, TextSprite, Tiles, type Sprite } from '../sim/sprites';
+import { Ball, Bonus, Creator, Frame, MOVE_COUNT, Paddle, Shatter, Shot, Stone, StoneAttr, StoneKind, TextSprite, Tiles, type Sprite } from '../sim/sprites';
 import { GameState, type World } from '../sim/world';
 import { BALL_COLORS, CAPSULE_COLORS, RemasterAssets, SHATTER_COLORS, STONE_COLORS } from './remastered/assets';
 import { FONT, Hud, PANEL_X, STRIP_H } from './remastered/hud';
@@ -420,7 +420,8 @@ export class RemasteredView {
     const list = playing ? w.drawList() : [];
     let order = 0;
     for (const s of list) {
-      if (s instanceof Frame || s instanceof Tiles || s instanceof Shatter || s instanceof TextSprite) continue;
+      // (the editor's palette is the HUD's)
+      if (s instanceof Frame || s instanceof Tiles || s instanceof Shatter || s instanceof TextSprite || s instanceof Creator) continue;
       const f = this.assets.get(s.image);
       if (!f) continue;
       let d = this.drawn.get(s);
@@ -442,6 +443,8 @@ export class RemasteredView {
         x = lerp(pr[0], s.x, alpha);
         y = lerp(pr[1], s.y, alpha);
       }
+      x += s.drawDx;
+      y += s.drawDy;
       d.s.texture = tex;
       d.s.scale.set(f.scale);
       d.s.position.set(x, y);

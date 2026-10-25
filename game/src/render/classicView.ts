@@ -168,7 +168,7 @@ export class ClassicView {
           for (let ty = 0; ty < Tiles.MAP_H; ty++) {
             for (let tx = 0; tx < Tiles.MAP_W; tx++) this.drawPattern(s.image, 0, x + tx * s.w, y + ty * s.h);
           }
-        } else this.drawPattern(s.image, s.frame, x, y);
+        } else this.drawPattern(s.image, s.frame, x + s.drawDx, y + s.drawDy);
       }
       if ((w.state === GameState.Course || w.state === GameState.Test) && !this.strip) this.drawHud(w, fps);
     }

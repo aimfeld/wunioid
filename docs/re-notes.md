@@ -147,6 +147,8 @@ TCustomDXInput.Update, 0x40c224 TCustomDXDraw.CanDraw, 0x40c1f4 Flip, 0x416460 T
 | 0x420ca0 | the paddle |
 | 0x420ca4 | stone grid `TStone[15][19]`, index col × 19 + row, cols 1–13 and rows 1–17 used, the rest nil |
 | 0x421118 | background tile sprite |
+| 0x42111c | level editor: the brush, a stone kind 1–13 or an attribute 1–4 (StartEditor sets 1) |
+| 0x42111d | level editor: the brush is an attribute (StartEditor sets 0) |
 | 0x421120 | the level buffer (443 bytes, the `.lev` file) |
 | 0x4212da | = level byte 442, background tile 1–9 (0 = none) |
 | 0x4212dc | score |
@@ -370,6 +372,66 @@ with speed < 6 adds 0.5 to the speed (constants 6 @0x419370, 0.5 @0x419374).
   missing.
 - See `docs/file-formats.md`.
 
+### Level editor (session 10, 2026-10-25)
+All **Observed** in the assembly unless marked.
+- **StartEditor (0x41a940)**, state 3: ClearLevel, the frame, brush 1 (0x42111c) as a stone (0x42111d = 0),
+  CreateStones (each stone with an attribute gets its label sprite at X + 15, Y + 7, Z 3: TStone.Create in
+  state 3; drawn on the stone, see the positions below), CreateBackground, `Draw.Cursor := crDefault`, then TCreatorSprite (0x41aa14: image `Creator`, Z 2) at
+  460, 50. Nothing moves: **EditorTick (0x41a9f4)** only calls SpriteEngine.Dead (0x40f790), which frees the
+  sprites removed by clicks.
+- **CreateBackground (0x41aed0)** makes the tile sprite (0x421118) only if there is none and otherwise just sets
+  its image, so picking another background in the editor reuses it. ClearLevel sets 0x421118 to nil.
+- **DrawMouseDown (0x41aad4)**, published (Draw.OnMouseDown), state 3 only. Arguments: Button in CL (mbLeft 0,
+  mbRight 1), X, Y on the stack. It adds 20 to Y first: the Draw control sits under the menu bar while the
+  fullscreen picture starts at the top of the screen, so Y + 20 is the picture's y (the remake passes picture
+  px). ColOfX (0x41aa9c) = (X − 14 − 5) div 30 + 1, RowOfY (0x41aab8) = (Y − 14 − 5) div 15 + 1 (nested
+  functions, reading the parent's frame).
+  - Playfield: 14 < X < 404 and 14 < Y < 269 (so rows 1–17, but only the top 10 px of row 17's stones, and
+    columns 1–13). With a **stone brush**: a stone there dies (and its label), the cell (kind, attribute) is set
+    to 0, 0; then, with the left button, the cell becomes (brush, 0) and a new TStone is made. The right button
+    only clears. With an **attribute brush** and a stone there: the stone (and label) dies; the right button sets
+    the attribute to 0; the left sets it to the brush unless it is Bonus on a non-gem (kind − 1 ≥ 5 unsigned),
+    Move on a Goldie (12) or Hike on a BeBack (11), in which case the attribute stays; either way a new TStone is
+    made from the cell. No sound, no score.
+  - Palette (the `Creator` image, 137 × 387, at 460, 50): **stones** 460 < X < 600, 75 < Y < 167, brush =
+    ((Y − 75) div 23) × 4 + (X − 460) div 35 + 1, taken if 1–13 (rows of 4 cells of 35 × 23; cells 14–16 empty);
+    **attributes** 460 < X < 600, 191 < Y < 214, the same formula from 191, taken if 1–4 (Bonus, Move, Hike,
+    Iron), attribute mode; **backgrounds** 460 < X < 595, 244 < Y < 385, tile = ((Y − 244) div 47) × 3 +
+    (X − 460) div 45 + 1, taken if 1–9: level byte 442 (0x4212da), then CreateBackground. The original shows
+    no mark on the brush.
+- **Level ▸ New (New1Click 0x41b7ec)**: all cells and the tile to 0, then state 3. **Level ▸ Edit
+  (Create1Click 0x41bba4)**: state 3 with the buffer as it is (a course level after a game).
+- **Level ▸ Save as (Save1Click 0x41b824)**: windowed; SaveDialog (DefaultExt `lev`, Filter `Level Files|*.lev`) in
+  `<base>\Levels`; for an existing file MessageDlg(Format('OK to overwrite %s', [FileName]), mtConfirmation,
+  [mbYes, mbNo]); writes the 443-byte buffer. Quirk: answering No skips GoFullscreen too (the jump goes past
+  it). The state stays 3.
+- **Level ▸ Load (Load1Click 0x41baa0)**: windowed; OpenDialog in `<base>\Levels`; LoadLevel(ExtractFileName);
+  fullscreen; then **state 2 (test) even after Cancel**. To edit a level from a file: Load, then Level ▸ Edit.
+- Test (state 2): a finished level goes back to the editor (state 3, PlayTick), game over restarts the test.
+
+### Course editor (TCourseEditor, session 10)
+**Observed.** The level list box (CourseListBox, +0x1e8) is the course being played; the high-score list box
+(+0x220) holds THighScore objects (+4 score, +8 level). Handlers:
+- **AddClick (0x41cdd0)**: LevelAddDialog (Title 'Add level to course', `*.lev`) in `<base>\Levels`; the file
+  name (ExtractFileName, cut to string[50]) added at the end.
+- **DeleteClick (0x41ced8)**: if an entry is selected: with fewer than 2 entries MessageBox 'You have to leave
+  one level at least!' (caption 'Error'), else the entry is deleted.
+- **MoveUpClick / MoveDownClick (0x41cf98 / 0x41d014)**: Items.Move by one, the selection follows; not past the
+  ends.
+- **Course ▸ New (New1Click 0x41d0a0)**: Items.Clear, ClearHighScores (0x41cd40: frees and deletes the entries,
+  then SaveHighScores), label 'Course: NoName', name `NoName`. **Quirk:** ClearHighScores runs while the course
+  name is still the old one, so the empty table is saved over the previous course's high scores (SaveHighScores
+  0x41c128 skips only `NoName`). The remake doesn't do this (it would wipe e.g. the default course's 2011 table).
+- **Course ▸ Save as (Saveas1Click 0x41d104)**: with no entries MessageBox 'You have to add one level at
+  least!' ('Error'); else SaveCourseAs (0x41c318): CourseSaveDialog (DefaultExt `cse`) in the base directory,
+  'OK to overwrite %s' for an existing file, writes the course (count, then string[50] per entry); the course
+  name becomes the file's name and the label 'Course: <name>'. The high scores are not saved or cleared: the
+  list keeps the old course's table, which the next high score saves under the new name.
+- **Course ▸ Open (0x41d170)**: CourseOpenDialog, LoadCourse(ExtractFileName). **HighScoreResetClick
+  (0x41d1f4)**: ClearHighScores (saved at once). **HighScoreListBoxClick (0x41d1fc)**: selects the level the
+  clicked score reached. **Info1Click (0x41d22c)**: the Info form. **Close1Click (0x41cdac)**: Close;
+  **FormClose (0x41cdb4)**: Form1 shown, fullscreen; CourseEditorTick then starts a new game.
+
 ## Findings while porting (session 3, 2026-10-24)
 Read again in `game.txt`/`game_c.txt` and the DelphiX dumps (`dxsprite.txt`, `dxwave.txt` from
 `tools/ghidra_dump.sh 0x416100 0x416300 dxwave`) while writing `game/src/sim/`.
@@ -413,8 +475,12 @@ Read again in `game.txt`/`game_c.txt` and the DelphiX dumps (`dxsprite.txt`, `dx
   entries every score qualifies, even 0. Both shipped tables (2011) have 9 entries.
 - **Observed, positions**: TBackgroundSprite at X 14, Y 14 (doubles at +0x1c, +0x24 = 0x402c… = 14.0; CreateBackground
   0x41aed0); text banners at Y 120.0 (0x405e0000); the editor's Creator palette at 460, 50 (StartEditor 0x41a940);
-  the editor's attribute labels at the stone's X + 15, Y + 7 (TStone.Create; constants K15, K7 by the dump's
-  naming, not checked).
+  the editor's attribute labels at the stone's X + 15, Y + 7 (TStone.Create 0x4177e0: singles 15.0, 7.0 at
+  0x417940/0x417944). The label is still drawn exactly on the stone: TStone.Create writes its image field (+0x54)
+  directly instead of the Image property, so Width and Height (+0x30, +0x34) stay 0, and TImageSprite.DoDraw
+  (0x40ea48) draws the image centred in Width × Height (GetDrawRect 0x40ea04: offset by (Width − image width) div 2,
+  (Height − image height) div 2, i.e. −15, −7 for the 30 × 15 labels). Every other sprite's image is set with its
+  size (0x417f29 swaps a grid stone's image without it, but all stones are 30 × 15).
 - **Inferred, paddle limits**: the paddle starts at X 200 and moves exactly 6 px (0.3 × 20), so X is always
   200 + 6k. On the left it stops at exactly 14 (200 − 31 × 6). On the right the test is `X + W < 414` before the
   step, so it ends at X + W = 418 (normal and gun), 416 (long) or 414 (short). SetKind doesn't clamp: taking Pad+
@@ -428,8 +494,8 @@ Read again in `game.txt`/`game_c.txt` and the DelphiX dumps (`dxsprite.txt`, `dx
   fraction bits, half away from zero. The exact mode can't matter at this precision.
 
 ## Open questions
-- **Unknown:** the editor (DrawMouseDown 0x41aad4, palette `Creator` at 460, 50) is only partly read; it's
-  needed in Phase 4.
+- **To check in the game:** the level editor's clicks (left places, right clears, attributes refused on the
+  wrong stones), and that the mouse Y really is offset by the menu bar's 20 px in fullscreen (DrawMouseDown).
 - **Unknown:** the tick rate the original actually ran at (see Timing).
 - **To check in the game:** the ball's animation after piercing ends; whether the 170°–190° guard and the
   missing 0°/360° guard are visible in play; `Level: 0` on the first level.

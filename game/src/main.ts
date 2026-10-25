@@ -12,33 +12,17 @@ import { createApp } from './render/app';
 import { ClassicView, loadImages, STRIP_H as CLASSIC_STRIP } from './render/classicView';
 import { RemasterAssets } from './render/remastered/assets';
 import { STRIP_H as REMASTERED_STRIP } from './render/remastered/hud';
+import { onBrushes, onEraser, onMenu, onTest } from './render/remastered/palette';
 import { RemasteredView } from './render/remasteredView';
 import { loadSettings, saveSettings } from './settings';
-import { highScoreFile, parseHighScores, writeHighScores, type HighScore } from './sim/files';
-import { GameState, World, type Input } from './sim/world';
-import { chooseCourse, courseEditor, inputBox, menuBar } from './ui/dialogs';
+import { highScoreFile, writeCourse } from './sim/files';
+import { GameState, NO_NAME, World, type Input } from './sim/world';
+import { download, importFiles, loadStoredFiles, sortedNames, storeCourse, storeLevel, storeScores } from './storage';
+import { courseEditor, fileDialog, inputBox, menuBar } from './ui/dialogs';
 import { Menu } from './ui/menu';
 
 const TICK_MS = 22; // decision 6: the DXTimer's interval, 1000/22 ≈ 45.45 ticks per second
 const MAX_TICKS_PER_FRAME = 8; // after a stall, catch up at most this much
-const SCORES_KEY = 'wunioid.scores.'; // + the high-score file name (defaultscr), base64
-
-function storedScores(file: string): HighScore[] | null {
-  try {
-    const b64 = localStorage.getItem(SCORES_KEY + file);
-    return b64 === null ? null : parseHighScores(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
-  } catch {
-    return null;
-  }
-}
-
-function storeScores(file: string, scores: HighScore[]): void {
-  try {
-    localStorage.setItem(SCORES_KEY + file, btoa(String.fromCharCode(...writeHighScores(scores))));
-  } catch {
-    // no storage (private window): not kept
-  }
-}
 
 const UPDATE_CHECK_MS = 4000; // how long a start waits for the server's sw.js before going on (offline, slow network)
 const UPDATE_INSTALL_MS = 20000; // how long it waits for a new version to install
@@ -151,17 +135,15 @@ async function main(): Promise<void> {
     json: async (name) => (await fetch(base + name)).json(),
     binary: async (name) => (await fetch(base + name)).arrayBuffer(),
   });
-  for (const course of data.manifest.courses) {
-    const file = highScoreFile(course);
-    const stored = storedScores(file);
-    if (stored) data.files.scores.set(file, stored);
-  }
+  loadStoredFiles(data.files);
+  const courseNames = () => sortedNames(data.files.courses.keys());
+  const levelNames = () => sortedNames(data.files.levels.keys());
   const settings = loadSettings();
   // ?classic or ?remastered: that picture for this visit (links, tests), saved only when switched
   const query = new URLSearchParams(location.search);
   if (query.has('classic')) settings.remastered = false;
   if (query.has('remastered')) settings.remastered = true;
-  if (!data.manifest.courses.includes(settings.course)) settings.course = data.manifest.courses[0];
+  if (!data.files.courses.has(settings.course)) settings.course = courseNames()[0];
   const remasterAssets = (images: Parameters<typeof RemasterAssets.load>[1]) =>
     RemasterAssets.load(import.meta.env.BASE_URL, images, data.manifest);
   const [images, sfx] = await Promise.all([
@@ -242,14 +224,17 @@ async function main(): Promise<void> {
 
   // ---- the Remastered menus
 
-  const startCourse = () => {
-    world.loadCourse(settings.course);
-    world.request(GameState.Course);
+  const go = (state: GameState) => {
+    world.request(state);
     menu.close();
     setPaused(false);
   };
+  const startCourse = () => {
+    world.loadCourse(settings.course);
+    go(GameState.Course);
+  };
   const menu: Menu = new Menu(document.body, {
-    courses: () => data.manifest.courses.map((file) => ({
+    courses: () => courseNames().map((file) => ({
       file,
       levels: data.files.courses.get(file)?.filter((l) => data.files.levels.has(l)).length ?? 0,
       scores: data.files.scores.get(highScoreFile(file)) ?? [],
@@ -268,12 +253,89 @@ async function main(): Promise<void> {
       menu.close();
       setPaused(false);
     },
+    editor: {
+      world,
+      edit: () => go(GameState.Editor),
+      newLevel: () => {
+        world.newLevel();
+        go(GameState.Editor);
+      },
+      test: () => go(GameState.Test),
+      levels: levelNames,
+      courses: courseNames,
+      levelName: () => levelName,
+      loadLevel: (name) => {
+        levelName = name;
+        world.loadLevel(name);
+        go(GameState.Editor); // the original tests a loaded level; the Remastered menu edits it
+      },
+      saveLevel: (name) => writeLevel(name),
+      openCourse: (name) => world.loadCourse(name),
+      saveCourse: (name) => {
+        saveCourse(name);
+        settings.course = name;
+        saveSettings(settings);
+      },
+      playCourse: () => {
+        if (world.course.name !== NO_NAME && data.files.courses.has(world.course.name)) {
+          settings.course = world.course.name;
+          saveSettings(settings);
+        }
+        go(GameState.Course);
+      },
+      importFiles: (files) => importer(files),
+      download: (name) => download(name, /\.lev$/i.test(name) ? data.files.levels.get(name)! : writeCourse(data.files.courses.get(name)!)),
+    },
   });
   document.addEventListener('fullscreenchange', () => menu.refresh());
   if (import.meta.env.DEV) Object.assign(window, { menu, startCourse, pause: (p = true) => setPaused(p) });
+
+  // The level editor: DrawMouseDown, the left button places, the right one clears (no context menu over the
+  // picture). Both pictures paint along a drag (the original takes clicks only). Remastered adds the palette's
+  // eraser (touch has no right button) and its Test and Menu buttons.
+  let erase = false;
+  let painted = ''; // the cell the drag last painted
+  const editorClick = (e: PointerEvent, drag: boolean) => {
+    if (world.state !== GameState.Editor || dialog || menu.open) return;
+    const [fx, fy] = view().toScreen(e.clientX, e.clientY);
+    const x = Math.floor(fx), y = Math.floor(fy);
+    const r = useRemastered();
+    const cell = `${Math.trunc((x - 19) / 30)},${Math.trunc((y - 19) / 15)}`;
+    if (drag) {
+      const right = (e.buttons & 2) !== 0;
+      if (!(e.buttons & 3) || cell === painted || x > 414) return;
+      painted = cell;
+      place(x, y, right);
+      return;
+    }
+    painted = cell;
+    if (r && onMenu(x, y)) return openPause();
+    if (r && onTest(x, y)) return go(GameState.Test);
+    if (r && onEraser(x, y)) {
+      erase = true;
+      return;
+    }
+    if (r && onBrushes(x, y)) erase = false;
+    place(x, y, e.button === 2);
+  };
+  /** A click; the eraser is a right click with a stone brush (an attribute brush only clears the attribute). */
+  const place = (x: number, y: number, right: boolean) => {
+    if (useRemastered() && erase && x < 414) {
+      const attr = world.brushAttr;
+      world.brushAttr = false;
+      world.editorMouseDown(x, y, true);
+      world.brushAttr = attr;
+    } else world.editorMouseDown(x, y, right);
+  };
+  app.canvas.addEventListener('pointerdown', (e) => editorClick(e, false));
+  app.canvas.addEventListener('pointermove', (e) => editorClick(e, true));
+  app.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   const openPause = () => {
     if (!useRemastered() || dialog || menu.open) return;
+    // a test game (Remastered starts one only from the editor): straight back to the editor
+    if (world.state === GameState.Test) return go(GameState.Editor);
     if (world.state === GameState.None) menu.showTitle();
+    else if (world.state === GameState.Editor) menu.showEditor();
     else menu.showPause();
   };
   touch.onMenu = null;
@@ -304,17 +366,53 @@ async function main(): Promise<void> {
       enterName(name === null ? null : name.replace(/\s+/g, ''));
     }
     await courseEditor({
-      course: world.course.name,
-      levels: world.course.levels,
-      scores: world.highScores,
+      world,
       selected: p ? p.place : -1,
-      courses: data.manifest.courses,
-      open: (name) => {
-        world.loadCourse(name);
-        return { levels: world.course.levels, scores: world.highScores };
-      },
+      chooseLevel: () => levelDialog({ title: 'Add level to course' }),
+      chooseCourse: (save) => courseDialog(save),
+      open: (name) => world.loadCourse(name),
+      save: saveCourse,
     });
     world.courseEditorOpen = false;
+  });
+
+  // ---- files: the open and save dialogs over the shipped and the player's files
+
+  const importer = (files: File[]) => importFiles(files, data.files);
+  const levelDialog = (o: { title?: string; save?: boolean; value?: string } = {}) => fileDialog({
+    ...o, names: levelNames, filter: 'Level Files (*.lev)', ext: 'lev', import: importer,
+    download: (name) => download(name, data.files.levels.get(name)!),
+  });
+  const courseDialog = (save: boolean) => fileDialog({
+    save, value: save ? world.course.name : '', names: courseNames, filter: 'Course Files (*.cse)', ext: 'cse',
+    import: importer, download: (name) => download(name, writeCourse(data.files.courses.get(name)!)),
+  });
+  /** SaveCourseAs (0x41c318): the course under the name chosen. */
+  const saveCourse = (name: string) => {
+    world.courseSaved(name);
+    storeCourse(name, world.course.levels);
+  };
+  /** The level buffer to a file. */
+  let levelName = '';
+  const writeLevel = (name: string) => {
+    levelName = name;
+    const level = new Uint8Array(world.level);
+    data.files.levels.set(name, level);
+    storeLevel(name, level);
+  };
+  /** Level ▸ Save as (Save1Click 0x41b824): the editor goes on. */
+  const saveLevelAs = () => runDialog(async () => {
+    const name = await levelDialog({ save: true, value: levelName });
+    if (name) writeLevel(name);
+  });
+  /** Level ▸ Load (Load1Click 0x41baa0): a level file into the buffer, then a test game (also after Cancel). */
+  const loadLevel = () => runDialog(async () => {
+    const name = await levelDialog({ value: levelName });
+    if (name) {
+      levelName = name;
+      world.loadLevel(name);
+    }
+    world.request(GameState.Test);
   });
 
   const bar = menuBar([
@@ -327,18 +425,18 @@ async function main(): Promise<void> {
     },
     {
       label: 'Level', items: [
-        { label: 'New' },
-        { label: 'Edit' },
+        { label: 'New', action: () => world.newLevel() },
+        { label: 'Edit', action: () => world.request(GameState.Editor) },
         { label: 'Test', action: () => world.request(GameState.Test) },
-        { label: 'Save as...' },
-        { label: 'Load...' },
+        { label: 'Save as...', action: () => void saveLevelAs() },
+        { label: 'Load...', action: () => void loadLevel() },
       ],
     },
     {
       label: 'Course', items: [
         {
           label: 'Load...', action: () => void runDialog(async () => {
-            const c = await chooseCourse(data.manifest.courses, world.course.name);
+            const c = await courseDialog(false);
             if (!c) return;
             world.loadCourse(c);
             world.request(GameState.Course);
@@ -435,8 +533,14 @@ async function main(): Promise<void> {
     app.canvas.style.cursor = playing && !menu.open ? 'none' : 'default';
     const strip = r ? REMASTERED_STRIP : CLASSIC_STRIP;
     touch.update(touchUsed, playing && !dialog && !menu.open, layout(strip));
-    if (r) r.touch = touchUsed;
-    view().setArea(touchUsed ? layout(strip).game : null, touchUsed && layout(strip).portrait);
+    if (r) {
+      r.touch = touchUsed;
+      if (world.state !== GameState.Editor) erase = false;
+      r.hud.erase = erase;
+    }
+    // the editor needs the palette beside the playfield (never the portrait strip), and has no touch buttons
+    const editing = world.state === GameState.Editor;
+    view().setArea(touchUsed && !editing ? layout(strip).game : null, touchUsed && layout(strip).portrait && !editing);
     if (r) r.draw(world, paused || dialog || menu.open ? 0 : acc / TICK_MS);
     else if (!paused) classic.draw(world, fps);
     requestAnimationFrame(frame);
