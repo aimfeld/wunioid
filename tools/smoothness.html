@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- A smoothness test without the game (docs/known-issues.md): three balls at constant speed, placed by
+     requestAnimationFrame's timestamp only (no ticks, no PixiJS). If these jerk too, the display path is at fault.
+     Open it from a local server, e.g. `python3 -m http.server -d tools 8765` → http://127.0.0.1:8765/smoothness.html -->
+<meta charset="utf-8"><title>Smoothness test</title>
+<style>html,body{margin:0;background:#223;color:#ccd;font:14px sans-serif;overflow:hidden}#i{position:fixed;left:8px;top:8px}</style>
+<canvas id="c"></canvas><div id="i"></div>
+<script>
+// A ball at constant speed, placed by requestAnimationFrame's timestamp only: no game, no ticks, no library.
+const c = document.getElementById('c'), g = c.getContext('2d'), info = document.getElementById('i');
+const fit = () => { c.width = innerWidth * devicePixelRatio; c.height = innerHeight * devicePixelRatio; c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px'; };
+addEventListener('resize', fit); fit();
+let last = 0, n = 0, t0 = 0, long = 0;
+const speed = 0.5; // CSS px per ms
+function frame(now) {
+  if (!t0) t0 = now;
+  const dt = now - last; if (last && dt > 1.5 * 1000 / 60 && dt > 25) long++; last = now; n++;
+  const w = innerWidth - 40, d = ((now - t0) * speed) % (2 * w), x = 20 + (d < w ? d : 2 * w - d);
+  const s = devicePixelRatio;
+  g.fillStyle = '#223'; g.fillRect(0, 0, c.width, c.height);
+  for (let k = 0; k < 3; k++) { g.fillStyle = '#ffd860'; g.beginPath(); g.arc(x * s, (120 + k * 120) * s, 14 * s, 0, 7); g.fill(); }
+  g.fillStyle = '#556'; for (let k = 0; k <= 20; k++) g.fillRect((20 + k * w / 20) * s, 60 * s, 1, 360 * s);
+  if (n % 25 === 0) info.textContent = `${(1000 / dt).toFixed(1)} fps  long frames: ${long}`;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>

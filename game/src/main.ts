@@ -3,7 +3,6 @@
 
 import { Sfx } from './audio/sfx';
 import { loadGameData } from './data';
-import { FrameClock } from './frameClock';
 import { toggleFullscreen } from './input/fullscreen';
 import { Gamepad } from './input/gamepad';
 import { Keyboard } from './input/keyboard';
@@ -214,7 +213,7 @@ async function main(): Promise<void> {
   }
 
   let acc = 0;
-  const clock = new FrameClock();
+  let last = performance.now();
   let paused = false;
   let dialog = false; // a dialog has the keyboard and the game waits
   // no game yet, or a course game on its first level with no points (also a new game after game over)
@@ -227,7 +226,7 @@ async function main(): Promise<void> {
   // Timer.ActiveOnly: the original stops while its window is inactive and goes on when it is active again
   document.addEventListener('visibilitychange', () => {
     acc = 0;
-    clock.reset();
+    last = performance.now();
     sfx?.setHidden(document.hidden || paused);
   });
 
@@ -372,10 +371,11 @@ async function main(): Promise<void> {
   }
   applyMode();
 
-  let second = performance.now(), ticksThisSecond = 0, fps = 0; // DXTimer.FrameRate: ticks in the last second
+  let second = last, ticksThisSecond = 0, fps = 0; // DXTimer.FrameRate: ticks in the last second
   let padPrev = { up: false, down: false, left: false, right: false, ok: false, back: false, start: false };
   const frame = (now: number) => {
-    acc += Math.min(clock.step(now), TICK_MS * MAX_TICKS_PER_FRAME);
+    acc += Math.min(now - last, TICK_MS * MAX_TICKS_PER_FRAME);
+    last = now;
     if (keys.takePress('KeyR') && !dialog) setRemastered(!settings.remastered);
     if (keys.takePress('KeyF') && (!dialog || menu.open)) void toggleFullscreen();
     if (!dialog && !menu.open) {

@@ -149,15 +149,11 @@ Remastered is the default (user, session 6). First version in place; needs the u
   `startCourse()`, `pause()`.
 - [ ] **User:** play Remastered on desktop and the phone: the look of the re-renders (capsules, paddle, Bubbler,
   frame), the effects (too much? too little?), the HUD, the menus, smoothness at 60/120 Hz.
-- [x] User (session 7): weaker light around the balls and the paddle (about half the size and brightness); smooth
-  ball motion. The simulation moves the ball evenly (6 px a tick, checked), so the judder came from the picture:
-  the trail's glows sat on the tick positions and stepped at 45 Hz under a ball gliding at the display's rate (now
-  sampled along the interpolated path, every half tick), and requestAnimationFrame's timestamps can jitter by a few
-  ms, each ms a quarter pixel off the ball's line (`src/frameClock.ts` snaps frame times to the learnt refresh
-  period and feeds the difference back slowly). Not changed: the ball still sinks up to one step (6 px) into the
-  paddle or a stone before it turns, as in the original (the tick moves it, then the collision turns it).
-- [ ] **User:** is the ball smooth now (desktop and phone)? If the sinking into the paddle at a bounce still reads as
-  a jerk, the picture could draw the bounce at the contact point.
+- [x] User (session 7): weaker light around the balls and the paddle (about half the size and brightness). The
+  ball's trail glides with the ball (sampled along the interpolated path) instead of stepping at the tick rate.
+- [ ] Subtle, irregular jerks in the ball's motion on the user's desktop: the display path, not the game, as far as
+  measured; set aside by the user (session 7). Details, measurements and what is left to try:
+  [known-issues.md](known-issues.md).
 - [ ] Banners' and HUD's font: Comic Neue stands in for the original's Comic Sans look; check with the user.
 - [ ] Maybe: re-render the background tiles too (they are upscaled, soft on large screens); a sound for menu
   moves; the level editor's palette in the remastered look (Phase 4).

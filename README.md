@@ -20,3 +20,4 @@ and in Remastered Esc (or ☰ on touch, Start on a gamepad) for the menu.
 ## Docs
 - [docs/PLAN.md](docs/PLAN.md): goals, architecture, phases, decisions
 - [docs/inventory.md](docs/inventory.md): what survives of the original
+- [docs/known-issues.md](docs/known-issues.md): open problems and what was tried

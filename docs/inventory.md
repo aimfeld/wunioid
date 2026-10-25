@@ -83,7 +83,8 @@ kind 1 = GemRed, 2 GemOrange, 3 GemGreen, 4 GemBlue, 5 GemViolet. `tools/extract
 - `tools/export_game_data.py`: the EXE's image and wave lists, the levels, courses and high scores →
   `game/public/data/` (PNG with alpha, WAV, raw files, `data.json`). `tools/export_icons.py`: the app icons.
 - `tools/screenshot.mjs`: the dev server and headless Chrome; runs steps in the page and saves the picture or
-  the window (checking the game without a display).
+  the window (checking the game without a display). `tools/smoothness.html`: a bare motion test without the game
+  (see `docs/known-issues.md`).
 - `bin/deploy.sh` and `.github/workflows/deploy.yml`: GitHub Pages, as for Dark Planet.
 
 ## What we don't have
