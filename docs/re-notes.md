@@ -326,6 +326,14 @@ with speed < 6 adds 0.5 to the speed (constants 6 @0x419370, 0.5 @0x419374).
 ### Text banners (TTextSprite)
 - Create (0x419eac): image from TextImageList, X = 214 − W div 2, Y = 120, Z 20, all patterns looping at 0.02
   (0.4 frames per tick), counter = ticks. DoMove (0x419fec) counts down and dies at 0.
+- The pictures (Observed, `TextImageList`, session 8): 3D text rendered like Dark Planet's menu items: flat Comic Sans
+  letters, deeply extruded (olive-brown walls; the inner walls show, 3 to 4 px wide at the ends of the text), a
+  yellow-orange lava texture on the faces (soft orange, red-orange and yellow blobs 3 to 6 px across, no dark parts;
+  pixels from (130, 32, 0) to (255, 246, 74), the dark ones are the walls), 8 frames of a depth wave seen in
+  perspective. Measured per horizontal quarter of the text (Game Over, Course Done,
+  Well Done): the left and right ends move in and out by up to 3 px, mirrored (the camera in front of the middle);
+  the bands do so one after the other from the top down (the wave runs down the text, about 56 px long, 3 px
+  deep, Inferred from fitting `tools/remaster_banners.py` to these shifts); the top edges move by 1 px at most.
 - ShowText (0x41afb0): a non-blocking banner replaces the previous one. A blocking banner runs its own loop
   (DoMove(20), free dead sprites, DrawFrame) until it ends; nothing else moves.
 - Used: `Letsgo` 100 (new game), `DOh` 100 blocking (ball lost), `GameOver` 200 blocking, `1up` 100,

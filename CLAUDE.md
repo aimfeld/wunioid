@@ -16,7 +16,7 @@ Update them at the end of each piece of work, not only at session end.
 - `original_source/` is the pristine original. Never modify files there. Generated output goes in
   `original_source/extracted/` (gitignored) or outside the repo. Run the original from a copy (it writes high
   scores and levels next to the EXE).
-- Python tools in `tools/` use the stdlib, or `uv run --with pefile --with pillow` (no system packages).
+- Python tools in `tools/` use the stdlib, or `uv run --with ...` (pefile, pillow, numpy, scipy; no system packages).
 - Reverse-engineered behaviour must come from evidence (disassembly, observation in Wine), not guesses. Say
   clearly when something is inferred.
 

@@ -8,11 +8,13 @@ from the top left, supersampled 4 x 4 and stored at 4x the original size, so the
 position and size. Colours are sampled from the originals; every animation has the original's frame count and
 meaning (the magic gems' light from within, the capsules rolling about their long axis, the piercing ball's colour
 cycle, the Killer's colour cycle, Bubbler's water, the Eater's and Doubler's clouds). The background tiles are
-upscaled (Lanczos, wrapped so they tile without seams). Not drawn: the shatter animations (particles in the
-remaster), the banners (text in the remaster), the editor's attribute labels and palette (Phase 4).
+upscaled (Lanczos, wrapped so they tile without seams). The banners come from tools/remaster_banners.py. Not drawn:
+the shatter animations (particles in the remaster), the editor's attribute labels and palette (Phase 4).
 
-Writes <out>/sprites-<p>.webp (atlas pages), <out>/frame.webp (the playfield frame) and <out>/sprites.json:
-  {"scale": 4, "pages": [file...], "frames": {name: [[page, x, y, w, h], ...]}}  (4x px; w, h = 4 x the original)
+Writes <out>/sprites-<p>.webp (atlas pages), <out>/frame.webp (the playfield frame), <out>/title.webp (the title,
+trimmed: remaster_banners.title()) and <out>/sprites.json:
+  {"scale": 4, "scales": {name: 3}, "pages": [file...], "frames": {name: [[page, x, y, w, h], ...]}}
+  (4x px, w, h = 4 x the original; "scales": the sprites drawn at another scale, the banners)
 
 Usage: uv run --with numpy --with pillow python tools/remaster_render.py game/public/data game/public/remaster [names]
        (names, comma-separated: only those, written to <out>/preview.png instead, for trying things out)
@@ -23,6 +25,8 @@ import sys
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+import remaster_banners
 
 S = 4  # output px per original px
 SS = 4  # supersampling per output px
@@ -648,6 +652,11 @@ def sprites(data):
     out['Shot'] = [shot()]
     for n in range(1, 10):
         out['Tile%d' % n] = [tile(data, n)]
+    from multiprocessing import Pool
+    with Pool() as pool:
+        names = list(remaster_banners.TEXTS)
+        for name, frames in zip(names, pool.starmap(remaster_banners.frames, [(data, n) for n in names])):
+            out[name] = frames
     return out
 
 
@@ -707,9 +716,12 @@ def main():
         page.save(os.path.join(out, f), quality=QUALITY, method=6, exact=False)
         files.append(f)
     frame_border().save(os.path.join(out, 'frame.webp'), quality=QUALITY, method=6)
-    json.dump({'scale': S, 'pages': files, 'frames': index}, open(os.path.join(out, 'sprites.json'), 'w'),
+    title = remaster_banners.title()
+    title.crop(title.getbbox()).save(os.path.join(out, 'title.webp'), quality=QUALITY, method=6, exact=False)
+    scales = {name: remaster_banners.S for name in remaster_banners.TEXTS}
+    json.dump({'scale': S, 'scales': scales, 'pages': files, 'frames': index}, open(os.path.join(out, 'sprites.json'), 'w'),
               separators=(',', ':'))
-    total = sum(os.path.getsize(os.path.join(out, f)) for f in files + ['frame.webp'])
+    total = sum(os.path.getsize(os.path.join(out, f)) for f in files + ['frame.webp', 'title.webp'])
     print('%d pages, %d sprites, %.1f MB' % (len(pages), sum(len(v) for v in index.values()), total / 1e6))
 
 

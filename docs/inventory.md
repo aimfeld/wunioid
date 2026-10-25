@@ -78,8 +78,10 @@ kind 1 = GemRed, 2 GemOrange, 3 GemGreen, 4 GemBlue, 5 GemViolet. `tools/extract
   `npm run data` re-exports `game/public/data/`. Simulation in `src/sim/`, renderers in `src/render/` (Classic;
   Remastered with `remastered/` since session 6), the Remastered menus in `src/ui/menu.ts`.
 - `tools/remaster_render.py` (`npm run remaster`, session 6): the sprites re-rendered at 4x and the marble frame →
-  `game/public/remaster/` (WebP atlases, `sprites.json`). `game/public/fonts/`: Comic Neue (SIL OFL 1.1, with
-  `OFL.txt`) for the Remastered HUD, banners and menus.
+  `game/public/remaster/` (WebP atlases, `sprites.json`), with the banners of `tools/remaster_banners.py`
+  (session 8: the lava text with its wave, at 3x; run alone it writes a sheet comparing them with the originals)
+  and the title (`title.webp`).
+  `game/public/fonts/`: Comic Neue (SIL OFL 1.1, with `OFL.txt`) for the Remastered HUD, menus and banners.
 - `tools/export_game_data.py`: the EXE's image and wave lists, the levels, courses and high scores →
   `game/public/data/` (PNG with alpha, WAV, raw files, `data.json`). `tools/export_icons.py`: the app icons.
 - `tools/screenshot.mjs`: the dev server and headless Chrome; runs steps in the page and saves the picture or

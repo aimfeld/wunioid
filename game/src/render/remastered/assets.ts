@@ -10,6 +10,8 @@ export const SCALE = 4; // texture px per original px
 
 interface Index {
   scale: number;
+  /** The sprites at another scale (the banners). */
+  scales?: Record<string, number>;
   pages: string[];
   frames: Record<string, [number, number, number, number, number][]>;
 }
@@ -100,14 +102,16 @@ export class RemasterAssets {
   readonly ring = ring(128);
   readonly vignette = vignette();
 
-  private constructor(private readonly sprites: Map<string, Frames>, readonly frame: Texture) {}
+  /** frame: the playfield frame (4x); title: 'Wunioid' in the banners' lava look, trimmed (tools/remaster_banners.py). */
+  private constructor(private readonly sprites: Map<string, Frames>, readonly frame: Texture, readonly title: Texture) {}
 
   /** The re-rendered sprites, and the originals (smoothly scaled) for the images without one. */
   static async load(base: string, images: Images, manifest: Manifest): Promise<RemasterAssets> {
     const index: Index = await (await fetch(base + 'remaster/sprites.json')).json();
-    const [pages, frameImg] = await Promise.all([
+    const [pages, frameImg, titleImg] = await Promise.all([
       Promise.all(index.pages.map((p) => image(base + 'remaster/' + p))),
       image(base + 'remaster/frame.webp'),
+      image(base + 'remaster/title.webp'),
     ]);
     const sources = pages.map(source);
     const sprites = new Map<string, Frames>();
@@ -124,7 +128,7 @@ export class RemasterAssets {
         continue;
       }
       sprites.set(name, {
-        scale: 1 / index.scale,
+        scale: 1 / (index.scales?.[name] ?? index.scale),
         textures: frames.map(([p, x, y, w, h]) => new Texture({ source: sources[p], frame: new Rectangle(x, y, w, h) })),
       });
     }
@@ -139,7 +143,7 @@ export class RemasterAssets {
       }
       sprites.set(name, { scale: 1, textures });
     }
-    return new RemasterAssets(sprites, new Texture({ source: source(frameImg) }));
+    return new RemasterAssets(sprites, new Texture({ source: source(frameImg) }), new Texture({ source: source(titleImg) }));
   }
 
   get(name: string): Frames | undefined {

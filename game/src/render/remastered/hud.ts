@@ -4,7 +4,7 @@
 // the power-ups that run out (glue, gun, piercing, mega ball). In a phone's portrait window it is a strip above
 // the playfield (decision 10): lives, score and level. No FPS.
 
-import { Container, FillGradient, Graphics, Sprite, Text, type TextStyleOptions } from 'pixi.js';
+import { BlurFilter, Container, FillGradient, Graphics, Sprite, Text, type TextStyleOptions } from 'pixi.js';
 import { GameState, type World } from '../../sim/world';
 import { courseTitle } from '../../ui/menu';
 import type { RemasterAssets } from './assets';
@@ -15,14 +15,7 @@ export const STRIP_H = 34;
 const PX = 438, PW = 192; // the panel inside the 212 px right of the playfield
 const CX = PX + PW / 2;
 const MAX_ICONS = 8;
-
-/** The banners' gold: light yellow at the top to orange, with a dark brown edge (the TextImageList look). */
-export function goldFill(): FillGradient {
-  return new FillGradient({
-    type: 'linear', start: { x: 0, y: 0 }, end: { x: 0, y: 1 }, textureSpace: 'local',
-    colorStops: [{ offset: 0, color: 0xfff6b0 }, { offset: 0.45, color: 0xffc02a }, { offset: 1, color: 0xd8580a }],
-  });
-}
+const TITLE_W = 168;
 
 const LABEL: TextStyleOptions = { fontFamily: FONT, fontWeight: 'bold', fontSize: 12, fill: 0x9aa2e6, letterSpacing: 2 };
 const VALUE: TextStyleOptions = { fontFamily: FONT, fontWeight: 'bold', fontSize: 30, fill: 0xffffff,
@@ -83,10 +76,20 @@ export class Hud {
         colorStops: [{ offset: 0, color: 0x262c6e }, { offset: 0.5, color: 0x161a48 }, { offset: 1, color: 0x0c0e2a }],
       }))
       .roundRect(PX + 1, 11, PW - 2, 60, 10).fill({ color: 0xffffff, alpha: 0.05 });
-    const title = text('Wunioid', { fontFamily: FONT, fontWeight: 'bold', fontSize: 40, fill: goldFill(),
-      stroke: { color: 0x4a1c00, width: 5, join: 'round' },
-      dropShadow: { color: 0x000000, alpha: 0.7, blur: 3, distance: 3, angle: Math.PI / 3 } });
-    title.position.set(CX, 18);
+    // the title: the banners' lava text (tools/remaster_banners.py), over a soft shadow
+    const title = new Container();
+    for (const [dx, dy, shadow] of [[2, 3, true], [0, 0, false]] as const) {
+      const t = new Sprite(assets.title);
+      t.anchor.set(0.5);
+      t.scale.set(TITLE_W / assets.title.width);
+      t.position.set(CX + dx, 41 + dy);
+      if (shadow) {
+        t.tint = 0x000000;
+        t.alpha = 0.6;
+        t.filters = [new BlurFilter({ strength: 3 })];
+      }
+      title.addChild(t);
+    }
     const sub = text('REMASTERED', { ...LABEL, fontSize: 10, letterSpacing: 4, fill: 0xc8ccff });
     sub.position.set(CX, 70);
     this.panel.addChild(bg, title, sub, this.game, this.hint);
@@ -120,7 +123,7 @@ export class Hud {
       this.bars.push({ row, fill, color: p.color });
     });
     this.hint.position.set(CX, 446);
-    this.texts.push(title, sub, this.score, this.best, this.level, this.course, this.moreLives, this.hint);
+    this.texts.push(sub, this.score, this.best, this.level, this.course, this.moreLives, this.hint);
 
     // the strip
     const sbg = new Graphics()

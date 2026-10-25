@@ -39,12 +39,8 @@ const CSS = `
 .wmenu[hidden] { display: none; }
 .wm-box { width: min(440px, calc(100vw - 32px)); padding: 16px 0 24px; display: flex; flex-direction: column;
   align-items: stretch; gap: 10px; margin: auto; }
-.wm-logo { position: relative; text-align: center; font-size: clamp(56px, 16vw, 92px); line-height: 1.05;
-  margin-bottom: 0; user-select: none; }
-.wm-logo span { display: block; }
-.wm-logo .back { color: #4a1c00; -webkit-text-stroke: 12px #4a1c00; text-shadow: 0 6px 14px rgba(0,0,0,.7); }
-.wm-logo .front { position: absolute; inset: 0; background: linear-gradient(#fff6b0, #ffc02a 48%, #d8580a);
-  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wm-logo { display: block; width: min(330px, 78vw); margin: 6px auto 8px; user-select: none; pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,.65)); }
 .wm-sub { text-align: center; letter-spacing: .45em; font-size: 13px; color: #c8ccff; margin: -4px 0 6px; }
 .wm-gems { display: flex; justify-content: center; gap: 6px; margin: 4px 0 14px; }
 .wm-gem { width: 34px; height: 17px; clip-path: polygon(13% 0, 87% 0, 100% 30%, 100% 70%, 87% 100%, 13% 100%, 0 70%, 0 30%);
@@ -221,8 +217,10 @@ export class Menu {
     const fullscreen = () => h.fullscreen ? this.button(h.isFullscreen() ? 'Leave fullscreen' : 'Fullscreen', () => h.fullscreen!()) : null;
     switch (s) {
       case 'title': {
-        const logo = el('div', 'wm-logo');
-        logo.append(el('span', 'back', 'Wunioid'), el('span', 'front', 'Wunioid'));
+        const logo = document.createElement('img');
+        logo.className = 'wm-logo';
+        logo.src = import.meta.env.BASE_URL + 'remaster/title.webp'; // the banners' lava text (tools/remaster_banners.py)
+        logo.alt = 'Wunioid';
         const gems = el('div', 'wm-gems');
         for (const c of ['#f0302a', '#ffb43c', '#4cc84a', '#5a56e6', '#ee3ae6']) {
           const g = el('div', 'wm-gem');

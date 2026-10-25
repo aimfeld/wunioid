@@ -7,21 +7,21 @@
 // stand still: a stone that shatters bursts into splinters of its colour (instead of the shatter animation), a
 // stone that takes a hit and stays flashes, the ball throws sparks off the paddle, a collected capsule leaves a ring,
 // shots get a muzzle flash and sparks where they end, a BeBack that hides crumbles into a larger cloud of dust
-// and plays Crunch (silent in the original). Balls, shots, capsules and magic gems glow, the first three light the
-// floor, balls leave a short trail, everything casts a shadow on the background, which is dimmed towards its edges.
-// Losing the ball shakes the picture; a new level fades in. The banners are text in the TextImageList's
-// colours.
+// and plays Crunch (silent in the original).
+// Balls, shots, capsules and magic gems glow, the first three light the floor, balls leave a short trail, everything
+// casts a shadow on the background, which is dimmed towards its edges. Losing the ball shakes the picture; a new level fades in. The banners are the re-rendered lava text of
+// tools/remaster_banners.py, its wave smooth (more frames than the original's 8, picked by the sub-tick phase).
 //
 // Layout: the picture is the original's 640 x 480 (the playfield in the frame and the HUD panel right of it), or in
 // a phone's portrait window the playfield under a HUD strip, scaled to fill the area (not integer: nothing here is
 // pixel art).
 
-import { Application, Container, Graphics, Sprite as PixiSprite, Text, TilingSprite } from 'pixi.js';
+import { Application, BlurFilter, Container, Graphics, Sprite as PixiSprite, TilingSprite } from 'pixi.js';
 import type { Rect } from '../input/touch';
-import { Ball, Bonus, Frame, Paddle, Shatter, Shot, Stone, StoneAttr, StoneKind, TextSprite, Tiles, type Sprite } from '../sim/sprites';
+import { Ball, Bonus, Frame, MOVE_COUNT, Paddle, Shatter, Shot, Stone, StoneAttr, StoneKind, TextSprite, Tiles, type Sprite } from '../sim/sprites';
 import { GameState, type World } from '../sim/world';
 import { BALL_COLORS, CAPSULE_COLORS, RemasterAssets, SHATTER_COLORS, STONE_COLORS } from './remastered/assets';
-import { FONT, Hud, PANEL_X, STRIP_H, goldFill } from './remastered/hud';
+import { FONT, Hud, PANEL_X, STRIP_H } from './remastered/hud';
 
 export const W = 640;
 export const H = 480;
@@ -34,11 +34,9 @@ const TRAIL = 6; // ticks
 const TRAIL_STEP = 0.5; // ticks between the trail's glows
 const FADE_TICKS = 12;
 const BEBACK_DUST = 1.8; // a BeBack's crumbling: dust this much more than a hit's
-const BANNERS: Record<string, string> = {
-  GameOver: 'Game Over!', DOh: "D'Oh!", Shootem: "Shoot 'em!", '1up': '1 Up', Welldone: 'Well Done!',
-  Letsgo: "Let's go!", CourseDone: 'Course Done!',
-};
-/** Their ticks (the ShowText calls), so their age is known whenever they are first drawn. */
+const BANNER_SHADOW = { dx: 5, dy: 8, alpha: 0.5, blur: 4 }; // high above the field: offset further, soft
+const ANIM_PER_TICK = 0.02 * MOVE_COUNT; // the banners' animation (TTextSprite.Create), frames per tick
+/** The banners' ticks (the ShowText calls), so their age is known whenever they are first drawn. */
 const BANNER_TICKS: Record<string, number> = { GameOver: 200, DOh: 100, Shootem: 100, '1up': 100, Welldone: 200,
   Letsgo: 100, CourseDone: 200 };
 
@@ -66,7 +64,8 @@ interface Drawn {
 }
 
 interface Banner {
-  t: Text;
+  s: PixiSprite;
+  shadow: PixiSprite;
   total: number;
 }
 
@@ -200,7 +199,6 @@ export class RemasteredView {
     this.hud.strip.y = -STRIP_H;
     const r = s * (window.devicePixelRatio || 1);
     this.hud.setResolution(r);
-    for (const b of this.bannerTexts.values()) b.t.resolution = r;
     this.fade.clear().rect(0, 0, pw, ph).fill(0x000000);
   }
 
@@ -547,30 +545,39 @@ export class RemasteredView {
     for (const s of w.sprites) {
       if (!(s instanceof TextSprite) || s.dead) continue;
       live.add(s);
+      const f = this.assets.get(s.image);
+      if (!f) continue;
       let b = this.bannerTexts.get(s);
       if (!b) {
-        const t = new Text({ text: BANNERS[s.image] ?? s.image, style: {
-          fontFamily: FONT, fontWeight: 'bold', fontSize: 52, fill: goldFill(), letterSpacing: 1,
-          stroke: { color: 0x4a1c00, width: 7, join: 'round' },
-          dropShadow: { color: 0x000000, alpha: 0.75, blur: 6, distance: 5, angle: Math.PI / 3 },
-        } });
-        t.anchor.set(0.5);
-        t.resolution = this.scale * (window.devicePixelRatio || 1) * 1.2;
-        this.banners.addChild(t);
-        b = { t, total: Math.max(s.counter, BANNER_TICKS[s.image] ?? s.counter) };
+        const sp = new PixiSprite();
+        const shadow = new PixiSprite();
+        sp.anchor.set(0.5);
+        shadow.anchor.set(0.5);
+        shadow.tint = 0x000000;
+        shadow.filters = [new BlurFilter({ strength: BANNER_SHADOW.blur })];
+        this.banners.addChild(shadow, sp);
+        b = { s: sp, shadow, total: Math.max(s.counter, BANNER_TICKS[s.image] ?? s.counter) };
         this.bannerTexts.set(s, b);
       }
-      // pop in, sway gently, fade out over the last ticks
+      // the wave: the original's animation position, moved on by the part of a tick since, over all frames
+      const phase = (((s.animPos + ANIM_PER_TICK * (now % 1)) / s.patterns) % 1 + 1) % 1;
+      const tex = f.textures[Math.floor(phase * f.textures.length) % f.textures.length];
+      // pop in, fade out over the last ticks
       const age = b.total - s.counter + (now % 1);
       const pop = age < 10 ? 1 + 0.25 * Math.sin((age / 10) * Math.PI) * (1 - age / 10) - 0.3 * (1 - age / 10) ** 2 : 1;
-      b.t.scale.set(pop * Math.min(1, 380 / Math.max(1, b.t.width / b.t.scale.x)));
-      b.t.position.set(214, 145 + Math.sin(age * 0.12) * 3);
-      b.t.rotation = Math.sin(age * 0.08) * 0.02;
-      b.t.alpha = Math.min(1, age / 4, s.counter / 8);
+      const alpha = Math.min(1, age / 4, s.counter / 8);
+      const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
+      for (const [sp, dx, dy, a] of [[b.shadow, BANNER_SHADOW.dx, BANNER_SHADOW.dy, BANNER_SHADOW.alpha], [b.s, 0, 0, 1]] as const) {
+        sp.texture = tex;
+        sp.scale.set(f.scale * pop);
+        sp.position.set(cx + dx, cy + dy);
+        sp.alpha = alpha * a;
+      }
     }
     for (const [s, b] of this.bannerTexts) {
       if (live.has(s)) continue;
-      b.t.destroy();
+      b.s.destroy();
+      b.shadow.destroy();
       this.bannerTexts.delete(s);
     }
   }

@@ -122,9 +122,19 @@ Remastered is the default (user, session 6). First version in place; needs the u
   with the original's frames and meaning (gem glint of bonus stones, rolling capsule labels, the piercing ball's
   colour cycle, Killer's colour cycle, Bubbler's water, Eater / Doubler clouds). The playfield frame is re-rendered
   in white marble; the 9 background tiles are upscaled (Lanczos, wrapped, sharpened). Out: two 2048² WebP atlas
-  pages, `frame.webp`, `sprites.json` in `game/public/remaster/` (0.6 MB, committed like `data/`). Not re-rendered:
-  the shatter animations (particles instead), the banners (text instead), the editor's labels and palette (the
-  originals, smoothly scaled, until Phase 4).
+  pages, `frame.webp`, `sprites.json` in `game/public/remaster/` (committed like `data/`). Not re-rendered:
+  the shatter animations (particles instead), the editor's labels and palette (the originals, smoothly scaled,
+  until Phase 4).
+- [x] Banners re-rendered like the originals (user, session 8: closer to the original's lava text and wave):
+  `tools/remaster_banners.py`, after Dark Planet's `tools/menu_items.py`: Comic Neue Bold (letter-spaced like
+  Comic Sans), flat faces extruded 6 px deep (user: flat letters, deeper relief), soft lava blobs in the originals'
+  colours, a depth wave running down the text in perspective, its direction, length (56 px), amplitude (3 px) and
+  phase fitted to the originals' motion. At 3x (not 4x) and 12 frames per loop (the original has 8), to keep the
+  atlas at 5 pages (2.2 MB; it was 10 at 4x / 16 frames); `sprites.json` gets a `scales` entry for them. The view picks the frame from the sprite's
+  animation position plus the sub-tick part, so the wave runs smoothly; pop-in, fade-out and a soft shadow stay.
+- [x] The title "Wunioid" in the same look (user, session 8: "let's see how that looks"): a still (no wave) from
+  `remaster_banners.title()`, `remaster/title.webp` (trimmed, 40 KB), in the HUD panel (a sprite over a soft
+  shadow, instead of the gold Pixi text) and on the title screen (an `<img>`, instead of the CSS gradient text).
 - [x] `src/render/remasteredView.ts`: the same 640 × 480 layout (portrait: the playfield under a 34 px strip),
   scaled to fill the area (not integer). Positions interpolated between the last two ticks (`beforeTick`; a jump
   over 48 px snaps). Effects from comparing ticks (`afterTick`, render only): splinters in the stone's colour where
@@ -177,6 +187,26 @@ Remastered is the default (user, session 6). First version in place; needs the u
 - [ ] Maybe: re-render the background tiles too (they are upscaled, soft on large screens); a sound for menu
   moves; the level editor's palette in the remastered look (Phase 4).
 
+- [x] Music plan (session 9, decision 14): approach, and the *Revenge of Doh* title music transcribed from a
+  YouTube recording (120 BPM, G minor, bass Gm–F | E♭–D, the hook): [music.md](music.md).
+- [x] **User:** compare the rendered transcription of the hook with the original: matches (session 9).
+- [–] ~~Part B's melody~~: five candidates, none right; **decision (user, session 9): leave B out.**
+- [x] Synth additions (session 9): `pluck` (Karplus-Strong, tuned within 2 cents; with `hpf`, `drive`, `cutoff`
+  a distorted guitar), a `rock` drum kit, `level` (gain after the drive), master `loud`, `--levels` (mixing by
+  numbers: each instrument's level and spectrum).
+- [ ] **User:** pick a menu version: metal (140 BPM) or techno (132 BPM); draft 1 (synth-pop) was too tame.
+- [x] `tools/music/synth.py` (session 9): text scores (format in its docstring) → WAV + MP3 + loop points
+  (JSON); 2-op FM, band-limited saw/pulse with detune and a resonant low-pass, tracker arpeggios, glides,
+  synthesized 808/909-style drums, ping-pong echo, reverb, ducking by the kick, bus compressor, soft clipper.
+  The loop region holds a second pass, so tails carry over the seam. About 50 s for a 3-minute song.
+  Tempo 128 BPM for the menu track (user).
+- [ ] Menu track (the nod) in the chosen style; refine with the user by ear.
+- [ ] `src/audio/music.ts`: Web Audio buffer loop, menu track / level track (level − 1) mod 6, fades at level end
+  and game over, silent when paused or in the background, Remastered only; music on/off and volume in the
+  menus; balance against the SFX.
+- [ ] Level tracks 1–6.
+- [ ] Service worker: cache the music best effort, as Dark Planet's media.
+
 ### Phase 4: Editors and release
 - [ ] Level editor and course editor in the browser, as in the original, with `.lev`/`.cse` import and export
   and storage in `localStorage`.
@@ -187,7 +217,7 @@ Remastered is the default (user, session 6). First version in place; needs the u
 2. The level and course editors are in scope (session 1).
 3. The probable *Simpsons* samples (Doh, MultiDoh, Woohoo, Haahaa, IMean) stay, in Classic and Remastered
    (session 1).
-4. No music in either mode; the original has none (session 1).
+4. No music in Classic; the original has none (session 1). Remastered gets music (decision 14).
 5. GitHub repo `aimfeld/wunioid`, served at https://aimfeld.github.io/wunioid/ (session 1).
 6. Fixed simulation tick of 1000/22 ≈ 45.45 Hz, as the original's 22 ms DXTimer (session 2).
 7. Blocking banners (D'Oh!, Game Over, Course Done) and the "Well done" phase run at the tick rate, not at the
@@ -203,3 +233,6 @@ Remastered is the default (user, session 6). First version in place; needs the u
 12. Remastered has its own menus (title screen, course choice, high scores, pause, name entry); Classic keeps the
     original's Windows menu bar and dialogs (session 6).
 13. Remastered is the default; switch at any time with R or the menus (session 6).
+14. Remastered gets music (session 9): the title/main menu plays an original track that nods to the *Revenge
+    of Doh* (DOS) title music; the levels play 6 independent tracks in 1999 game-music style, repeating every 6
+    levels. Made as text scores rendered by a Python synth to MP3 ([music.md](music.md)).

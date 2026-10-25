@@ -1,0 +1,72 @@
+# Wunioid: title / main menu (Remastered), techno version. A nod to the title music of Arkanoid: Revenge of Doh
+# (DOS, 1989): its hook on an AdLib-like FM lead and the descending Gm - F - Eb - D bass (docs/music.md), as a
+# 303 acid line over 909 drums, with minor-seventh stabs and a detuned "hoover" doubling the hook.
+tempo 132
+steps 4
+ticks 6
+echo time=3 feedback=0.45 tone=3000
+reverb time=2.2 tone=7000 predelay=0.03
+master ratio=4 threshold=0.3 loud=1.1
+
+inst drums drums kit=electro gain=0.5 k=1.15 s=0.8 p=1.3 h=1.1 o=1.0 c=0.9 r=0.6 reverb=0.1
+inst acid saw a=0.002 d=0.16 s=0.55 r=0.03 cutoff=330 res=0.88 fenv=3.4 fdecay=0.14 glide=0.055 drive=2.5 gain=0.45 level=0.8 duck=0.3 echo=0.08
+inst fmlead fm ratio=1 index=2.2 isus=0.4 idecay=0.18 fb=0.6 a=0.002 d=0.35 s=0.55 r=0.1 gain=0.95 echo=0.4 reverb=0.25 pan=0.1
+inst hoover saw voices=7 detune=45 spread=1.0 a=0.01 d=1 s=0.85 r=0.2 vib=12 glide=0.08 cutoff=3800 res=0.1 drive=2 octave=-1 gain=0.4 level=1.1 echo=0.2 reverb=0.3 duck=0.35
+inst stab saw voices=3 detune=16 spread=0.5 a=0.002 d=0.08 s=0.0 r=0.05 cutoff=1100 res=0.4 fenv=2.4 fdecay=0.06 gain=0.8 echo=0.45 reverb=0.25 mono=0 pan=-0.2
+inst pad saw voices=6 detune=30 spread=1.0 a=0.5 d=3 s=0.85 r=1.0 cutoff=1500 gain=0.45 reverb=0.5 mono=0
+inst sub sine a=0.005 d=0.25 s=0.6 r=0.05 gain=0.4 duck=0.6
+
+# --- Intro: kick, hats and the acid line, closed and quiet ---
+pattern intro 4
+drums K . h . K . h . K . h . K . h h | K . h . K . h . K . h . K . h h
+drums K . h . K . h . K . h . K . h h | K h h h Kp h h h K h h h Kp h p p
+acid  G2:40 G2:25 G3:35 G2:25 ~Bb2 G2:25 F3:40 G2:30 F2:40 F2:25 F3:35 F2:25 ~A2 F2:25 Eb3:40 F2:30
+acid  Eb2:40 Eb2:25 Eb3:35 Eb2:25 ~G2 Eb2:25 D3:40 Eb2:30 D2:40 D2:25 D3:35 D2:25 ~F#2 D2:25 C3:40 D2:30
+acid  G2:55 G2:30 G3:45 G2:30 ~Bb2 G2:30 F3:55 G2:35 F2:55 F2:30 F3:45 F2:30 ~A2 F2:30 Eb3:55 F2:35
+acid  Eb2:55 Eb2:30 Eb3:45 Eb2:30 ~G2 Eb2:30 D3:55 Eb2:35 D2:60 D2:35 D3:50 D2:35 ~F#2 D2:35 C3:65 D2:45
+
+# --- Build: claps and open hats, the acid opens, the hook teases ---
+pattern build 4
+drums Kc h o h Kp h o h K h o h Kp h o h | K h o h Kp h o h K h o h Kp h o h
+drums K h o h Kp h o h K h o h Kp h o h | Kp h Kp h Kp h Kp h Kp p Kp p KP P P P
+acid  G2:80 G2:40 G3:60 G2:40 ~Bb2 G2:40 F3:80 G2:50 F2:80 F2:40 F3:60 F2:40 ~A2 F2:40 Eb3:80 F2:50
+acid  Eb2:80 Eb2:40 Eb3:60 Eb2:40 ~G2 Eb2:40 D3:80 Eb2:50 D2:80 D2:40 D3:60 D2:40 ~F#2 D2:40 C3:80 D2:50
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . - . | - . . . . . . . . . . . . . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . - . | - . . . . . . . . . . . . . . .
+stab  . . - . . . G3+Bb3+D4+F4 - . . - . . . F3+A3+C4+Eb4 - | . . - . . . Eb3+G3+Bb3+D4 - . . - . . . D3+F#3+A3+C4 -
+
+# --- A: the hook over the full groove ---
+pattern A 4
+drums Kc h o h Kp h o h K h o h Kp h o h | K h o h Kp h o h K h o h Kp h o h
+drums K h o h Kp h o h K h o h Kp h o h | K h o h Kp h o h K h o h Kp h oP h
+acid  G2:99 G2:45 G3:70 G2:45 ~Bb2 G2:45 F3:99 G2:55 F2:99 F2:45 F3:70 F2:45 ~A2 F2:45 Eb3:99 F2:55
+acid  Eb2:99 Eb2:45 Eb3:70 Eb2:45 ~G2 Eb2:45 D3:99 Eb2:55 D2:99 D2:45 D3:70 D2:45 ~F#2 D2:45 C3:99 D2:55
+sub   G1 . - . . . . . F1 . - . . . . . | Eb1 . - . . . . . D1 . - . . . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . F5 . G5 . D5 . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . A5 . F5 . G5 . - .
+stab  . . G3+Bb3+D4+F4 - . . . G3+Bb3+D4+F4 - . F3+A3+C4+Eb4 - . . . . | . . Eb3+G3+Bb3+D4 - . . . Eb3+G3+Bb3+D4 - . D3+F#3+A3+C4 - . . . .
+
+# --- A2: the answer on the hoover, the FM lead echoes it ---
+pattern A2 4
+drums Kc h o h Kp h o h K h o h Kp h o h | K h o h Kp h o h K h o h Kp h o h
+drums K h o h Kp h o h K h o h Kp h o h | K h o h Kp h o h Kp p Kp p KP P P P
+acid  G2:99 G2:45 G3:70 G2:45 ~Bb2 G2:45 F3:99 G2:55 F2:99 F2:45 F3:70 F2:45 ~A2 F2:45 Eb3:99 F2:55
+acid  Eb2:99 Eb2:45 Eb3:70 Eb2:45 ~G2 Eb2:45 D3:99 Eb2:55 D2:99 D2:45 D3:70 D2:45 ~F#2 D2:45 C3:99 D2:55
+sub   G1 . - . . . . . F1 . - . . . . . | Eb1 . - . . . . . D1 . - . . . . .
+hoover D6 . . C6 Bb5 . A5 . G5 . A5 . F5 . . .   | G5 . . A5 Bb5 . C6 . D6 . . . . . - .
+hoover D6 . . C6 Bb5 . A5 . G5 . A5 . C6 . . .   | Bb5 . A5 . G5 . F#5 . G5 . . . - . . .
+fmlead - . . . D6 . . C6 Bb5 . A5 . G5 . - .     | - . . . G5 . . A5 Bb5 . C6 . D6 . - .
+fmlead - . . . D6 . . C6 Bb5 . A5 . G5 . - .     | - . . . Bb5 . A5 . G5 . F#5 . G5 . - .
+stab  . . G3+Bb3+D4+F4 - . . . G3+Bb3+D4+F4 - . F3+A3+C4+Eb4 - . . . . | . . Eb3+G3+Bb3+D4 - . . . Eb3+G3+Bb3+D4 - . D3+F#3+A3+C4 - . . . .
+
+# --- Break: no kick; the bare AdLib hook over a pad, the acid squelches, a clap roll back in ---
+pattern break 4
+drums  . . h . . . h . . . h . . . h . | . . h . . . h . . . h . . . h .
+drums  . . h . . . h . . . h . . . h . | p . p . p . p . p p p p P P P P
+pad    G3+Bb3+D4+F4 . . . . . . . F3+A3+C4+Eb4 . . . . . . . | Eb3+G3+Bb3+D4 . . . . . . . D3+F#3+A3+C4 . . . . . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . F5 . G5 . D5 . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . A5 . F5 . G5 . - .
+acid   G2:30 . . . . . . . F2:30 . . . . . . . | Eb2:30 . . . . . . . D2:40 D2:50 D3:60 D2:70 ~F#2 D2:85 C3:99 D2:99
+
+song intro build A A2 break A A2
+loop 2

@@ -1,6 +1,6 @@
 # Wunioid Remastered
 
-*Wunioid* is a brick breaker for Windows in the spirit of *Arkanoid: Revenge of Doh*. Wunibald of Horse
+*Wunioid* is a brick breaker for Windows in the spirit of *Arkanoid: Revenge of Doh (1987)*. Wunibald of Horse
 Productions wrote it in Delphi 3 with DelphiX in 1998 and released it as freeware in March 1999: 13 kinds of
 stones, 16 bonus capsules, two courses of 32 levels, high scores, and a level and course editor. This project
 brings it back to life in the browser, in the same way as

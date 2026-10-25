@@ -1,0 +1,64 @@
+# Wunioid: title / main menu (Remastered). A nod to the title music of Arkanoid: Revenge of Doh (DOS, 1989):
+# its hook's rhythm and opening contour, the descending Gm - F - Eb - D bass with octave jumps and an
+# AdLib-like FM lead (docs/music.md), arranged as 1999 synth-pop / trance. Draft 1 (user: too tame).
+tempo 128
+steps 4
+ticks 6
+echo time=3 feedback=0.38 tone=3200
+reverb time=1.9 tone=6500 predelay=0.025
+master ratio=3 threshold=0.45
+
+inst drums drums k=0.9 s=1.2 p=0.9 h=0.7 o=0.6 c=0.6 l=0.6 m=0.6 t=0.6 reverb=0.12
+inst fmlead fm ratio=1 index=1.8 isus=0.45 idecay=0.25 fb=0.55 a=0.003 d=0.5 s=0.65 r=0.12 vib=18 vibdelay=0.2 gain=0.8 echo=0.28 reverb=0.22 pan=0.05
+inst saws saw voices=5 detune=22 spread=0.7 a=0.004 d=0.4 s=0.6 r=0.15 cutoff=2600 fenv=1.2 fdecay=0.2 gain=0.5 echo=0.2 reverb=0.25
+inst bass pulse width=0.42 a=0.002 d=0.18 s=0.55 r=0.04 cutoff=420 res=0.45 fenv=2.6 fdecay=0.09 drive=1.6 gain=0.28 duck=0.25
+inst sub sine a=0.01 d=1 s=0.9 r=0.1 gain=0.3 duck=0.35
+inst stab saw voices=3 detune=14 spread=0.4 a=0.002 d=0.09 s=0.0 r=0.06 cutoff=900 res=0.35 fenv=2.2 fdecay=0.07 gain=0.5 echo=0.3 reverb=0.2 mono=0 pan=-0.15
+inst arp pulse width=0.25 a=0.002 d=0.1 s=0.3 r=0.05 cutoff=2200 res=0.3 fenv=1.4 fdecay=0.06 gain=0.32 echo=0.45 reverb=0.2 pan=0.3
+inst pad saw voices=6 detune=28 spread=0.9 a=0.35 d=2.5 s=0.85 r=0.8 cutoff=1300 gain=0.22 reverb=0.45 duck=0.55 mono=0
+
+# --- Intro: the bare FM hook over a filtered pad; the drums come in ---
+pattern intro 4
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . F5 . G5 . D5 . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . A5 . F5 . G5 . - .
+pad    G3+Bb3+D4 . . . . . . . F3+A3+C4 . . . . . . . | Eb3+G3+Bb3 . . . . . . . D3+F#3+A3 . . . . . . .
+sub    G1 . . . . . . . F1 . . . . . . . | Eb1 . . . . . . . D1 . . . . . . .
+drums  . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .
+drums  h . h . h . h . h . h . h . h . | h . h . h h h . s . s . s s S S
+
+# --- A: the hook, full band ---
+pattern A 4
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . F5 . G5 . D5 . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . A5 . F5 . G5 . - .
+bass   G2 . G3 . G2 . G3 G2 F2 . F3 . F2 . F3 F2 | Eb2 . Eb3 . Eb2 . Eb3 Eb2 D2 . D3 . D2 . D3 D2
+sub    G1 . . . . . . . F1 . . . . . . . | Eb1 . . . . . . . D1 . . . . . . .
+stab   . . G4+Bb4+D5 - . . G4+Bb4+D5 - . . F4+A4+C5 - . . F4+A4+C5 - | . . Eb4+G4+Bb4 - . . Eb4+G4+Bb4 - . . D4+F#4+A4 - . . D4+F#4+A4 -
+pad    G3+Bb3+D4 . . . . . . . F3+A3+C4 . . . . . . . | Eb3+G3+Bb3 . . . . . . . D3+F#3+A3 . . . . . . .
+drums  Kc h o h kp h o h k h o h kp h o k | K h o h kp h o h k h o h kp h o h
+drums  K h o h kp h o h k h o h kp h o k | K h o h kp h o h k h o h kps s S S
+
+# --- A2: the answer, with the echoing arpeggio ---
+pattern A2 4
+fmlead D6 . . C6 Bb5 . A5 . G5 . A5 . F5 . . .   | G5 . . A5 Bb5 . C6 . D6 . . . . . - .
+fmlead D6 . . C6 Bb5 . A5 . G5 . A5 . C6 . . .   | Bb5 . A5 . G5 . F#5 . G5 . . . - . . .
+arp    G4 Bb4 D5 G5 D5 Bb4 G4 D5 F4 A4 C5 F5 C5 A4 F4 C5 | Eb4 G4 Bb4 Eb5 Bb4 G4 Eb4 Bb4 D4 F#4 A4 D5 A4 F#4 D4 A4
+bass   G2 . G3 . G2 . G3 G2 F2 . F3 . F2 . F3 F2 | Eb2 . Eb3 . Eb2 . Eb3 Eb2 D2 . D3 . D2 . D3 D2
+sub    G1 . . . . . . . F1 . . . . . . . | Eb1 . . . . . . . D1 . . . . . . .
+stab   . . G4+Bb4+D5 - . . G4+Bb4+D5 - . . F4+A4+C5 - . . F4+A4+C5 - | . . Eb4+G4+Bb4 - . . Eb4+G4+Bb4 - . . D4+F#4+A4 - . . D4+F#4+A4 -
+pad    G3+Bb3+D4 . . . . . . . F3+A3+C4 . . . . . . . | Eb3+G3+Bb3 . . . . . . . D3+F#3+A3 . . . . . . .
+drums  K h o h kp h o h k h o h kp h o k | K h o h kp h o h k h o h kp h o h
+drums  K h o h kp h o h k h o h kp h o k | K h o h kp h o h k h o h kp p S S
+
+# --- C: breakdown, new chords, half-time beat, the saws take a new tune ---
+pattern C 4
+saws   Eb5 . . D5 Eb5 . G5 . F5 . . . D5 . . .  | Bb4 . . C5 D5 . F5 . G5 . . . . . - .
+saws   Eb5 . . D5 Eb5 . G5 . Bb5 . . . A5 . . .  | G5 . . . F#5 . . . G5 . . . - . . .
+arp    Eb4 G4 Bb4 Eb5 Bb4 G4 Eb4 Bb4 F4 A4 C5 F5 C5 A4 F4 C5 | Eb4 G4 Bb4 Eb5 Bb4 G4 Eb4 Bb4 D4 F#4 A4 D5 A4 F#4 D4 A4
+bass   Eb2 . . . . . Eb3 . F2 . . . . . F3 . | Eb2 . . . . . Eb3 . D2 . . . . . D3 .
+sub    Eb1 . . . . . . . F1 . . . . . . . | Eb1 . . . . . . . D1 . . . . . . .
+pad    Eb3+G3+Bb3 . . . . . . . F3+A3+C4 . . . . . . . | Eb3+G3+Bb3 . . . . . . . D3+F#3+A3 . . . . . . .
+drums  K . h . h . h . p . h . h . h . | K . h . h . k . p . h . h . h .
+drums  K . h . h . h . p . h . h . h . | K . h . h . k . p . h . p p S S
+
+song intro A A2 C A A2
+loop 1
