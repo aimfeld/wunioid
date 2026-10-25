@@ -96,12 +96,13 @@ function button(label: string, action?: () => void): HTMLButtonElement {
 }
 
 /** InputBox(caption, prompt, default): the name for a high score; null for Cancel. */
-export function inputBox(caption: string, prompt: string): Promise<string | null> {
+export function inputBox(caption: string, prompt: string, value = ''): Promise<string | null> {
   return new Promise((resolve) => {
     const w = windowFrame(caption);
     w.body.append(el('div', 'prompt', prompt));
     const input = el('input');
     input.maxLength = 40;
+    input.value = value;
     w.body.append(input);
     const done = (v: string | null) => {
       w.close();
@@ -115,7 +116,7 @@ export function inputBox(caption: string, prompt: string): Promise<string | null
       if (e.key === 'Enter') done(input.value);
       if (e.key === 'Escape') done(null);
     });
-    setTimeout(() => input.focus(), 0);
+    setTimeout(() => input.select(), 0);
   });
 }
 

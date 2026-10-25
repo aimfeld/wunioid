@@ -278,11 +278,19 @@ async function main(): Promise<void> {
   };
   touch.onMenu = null;
 
+  /** The name for a high score, remembered for the next one (Cancel keeps the old one). */
+  const enterName = (name: string | null) => {
+    if (name) {
+      settings.name = name;
+      saveSettings(settings);
+    }
+    world.enterHighScore(name ?? '');
+  };
   /** The high-score name: the Remastered menu, or Classic's prompt and course editor dialog. */
   const openCourseEditor = () => runDialog(async () => {
     const p = world.pendingHighScore;
     if (useRemastered()) {
-      if (p) world.enterHighScore((await menu.askName(p.place, p.score)) ?? '');
+      if (p) enterName(await menu.askName(p.place, p.score, settings.name));
       const choice = await menu.showDone();
       world.courseEditorOpen = false; // CourseEditorTick: a new game on the next tick
       if (choice === 'menu') {
@@ -292,8 +300,8 @@ async function main(): Promise<void> {
       return;
     }
     if (p) {
-      const name = await inputBox(`${p.place + 1}. place`, 'Please enter your name (No blanks!)');
-      world.enterHighScore((name ?? '').replace(/\s+/g, ''));
+      const name = await inputBox(`${p.place + 1}. place`, 'Please enter your name (No blanks!)', settings.name);
+      enterName(name === null ? null : name.replace(/\s+/g, ''));
     }
     await courseEditor({
       course: world.course.name,

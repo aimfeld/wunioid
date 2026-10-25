@@ -73,7 +73,8 @@
   banners; sounds `src/audio/sfx.ts` (each play a new voice, as the original).
 - [x] Courses and high scores: course game, Game ▸ New / Pause, Level ▸ Test, Course ▸ Load / Editor, the name
   prompt and the course editor dialog (view only; its editing is Phase 4). High scores in `localStorage`, starting
-  from the 2011 tables.
+  from the 2011 tables. The name prompt (both modes) is filled with the last name entered, kept in
+  `wunioid.settings` (user; a remake convenience, the original's InputBox default is not verified).
 - [x] Input: the original keys, gamepad, mouse and touch (target steering at the paddle's 6 px/tick, see open
   question 1); F fullscreen, P pause, F2 new game. PWA: manifest, icons (`tools/export_icons.py`), service worker.
 - [x] `tools/screenshot.mjs`: dev server + headless Chrome, runs steps in the page and saves the picture or the window.

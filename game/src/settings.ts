@@ -7,10 +7,12 @@ export interface Settings {
   remastered: boolean;
   /** The course the menu plays. */
   course: string;
+  /** The name last entered for a high score, offered for the next one. */
+  name: string;
 }
 
 export function loadSettings(): Settings {
-  const defaults: Settings = { remastered: true, course: 'default' };
+  const defaults: Settings = { remastered: true, course: 'default', name: '' };
   try {
     return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
   } catch {

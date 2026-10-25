@@ -152,13 +152,13 @@ export class Menu {
   }
 
   /** The high-score name entry: resolves with the name (no blanks), or null. */
-  askName(place: number, score: number): Promise<string | null> {
+  askName(place: number, score: number, name = ''): Promise<string | null> {
     this.stack = [];
     this.highlight = place;
     this.scoresCourse = this.host.course();
     return new Promise((resolve) => {
       this.nameDone = resolve;
-      this.go('name', { place, score });
+      this.go('name', { place, score, name });
     });
   }
 
@@ -176,7 +176,7 @@ export class Menu {
     if (this.screen) this.render(this.screen);
   }
 
-  private go(s: Screen, arg?: { place: number; score: number }): void {
+  private go(s: Screen, arg?: { place: number; score: number; name?: string }): void {
     if (this.screen && this.screen !== s && s !== 'name') this.stack.push(this.screen);
     this.screen = s;
     this.root.hidden = false;
@@ -211,7 +211,7 @@ export class Menu {
     return b;
   }
 
-  private render(s: Screen, arg?: { place: number; score: number }): void {
+  private render(s: Screen, arg?: { place: number; score: number; name?: string }): void {
     const box = this.box;
     box.replaceChildren();
     const h = this.host;
@@ -314,6 +314,7 @@ export class Menu {
         const input = el('input', 'wm-input');
         input.maxLength = 20;
         input.placeholder = 'Your name';
+        input.value = arg?.name ?? '';
         input.setAttribute('autocomplete', 'nickname');
         input.addEventListener('input', () => (input.value = input.value.replace(/\s+/g, '')));
         const ok = () => {
@@ -326,7 +327,7 @@ export class Menu {
           e.stopPropagation();
         });
         box.append(input, this.button('OK', ok, 'primary'));
-        requestAnimationFrame(() => input.focus());
+        requestAnimationFrame(() => input.select());
         return;
       }
     }
