@@ -1,0 +1,135 @@
+# Wunioid: title / main menu (Remastered), "Acid Doh" as drum'n'bass: menu_acid1.txt (the 303 playing the hook of
+# the Revenge of Doh title music, the hard-sync lead, the original's harmony, the same knob curves) at 172 BPM over
+# a two-step break with ghost snares and a held sub bass, as acid jungle / techstep of 1996-99 did it.
+tempo 172
+steps 4
+swing 0.06
+echo time=3 feedback=0.4 tone=3000
+reverb time=1.8 tone=7000 predelay=0.02
+master ratio=4 threshold=0.3 loud=1.1
+
+inst drums drums kit=break gain=0.6 k=1.3 s=1.1 g=0.32 drive=1.6 reverb=0.06
+inst hats drums kit=break gain=0.42 h=1.0 o=0.9 r=0.6 reverb=0.12
+inst fill drums kit=hard gain=0.5 s=1.0 c=1.0 reverb=0.15
+inst acid saw filter=ladder cutoff=120 res=0.7 fenv=3.2 fdecay=0.14 a=0.002 d=0.35 s=0.8 r=0.015 glide=0.05 gate=0.55 dist=2.5 gain=0.6 level=0.85 echo=0.12 duck=0.15
+inst sub sine a=0.004 d=0.5 s=0.85 r=0.06 glide=0.04 gain=0.85 duck=0.55
+inst stab saw voices=3 detune=16 spread=0.5 a=0.002 d=0.08 s=0.0 r=0.05 cutoff=1200 res=0.4 fenv=2.4 fdecay=0.06 gain=0.6 echo=0.5 reverb=0.3 mono=0 pan=-0.2
+inst lead sync sync=1.0 syncenv=3.0 syncdecay=0.2 voices=2 detune=12 spread=0.3 filter=ladder cutoff=2500 res=0.3 fenv=1.0 fdecay=0.2 a=0.001 d=0.8 s=0.85 r=0.1 glide=0.035 vib=15 vibdelay=0.25 dist=2.0 gain=0.5 level=1.4 echo=0.3 reverb=0.2
+inst body pulse width=0.42 filter=ladder cutoff=1100 res=0.35 fenv=1.6 fdecay=0.25 a=0.002 d=0.6 s=0.8 r=0.1 glide=0.035 vib=15 vibdelay=0.25 dist=1.5 octave=-1 gain=0.5 level=0.8 echo=0.2 reverb=0.15
+inst pad saw voices=6 detune=30 spread=1.0 a=0.6 d=3 s=0.85 r=1.2 cutoff=1400 gain=0.45 reverb=0.55 mono=0
+
+# --- Intro: no drums but hats; the 303 fades in closed ---
+pattern in1 4
+hats  .*32 . . h . . . h . . . h . . . h . | . . h . . . h . . . h . . h h . h
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+acid.cutoff 90 .*62 200
+acid.res 0.7
+acid.level 0.1 .*62 0.45
+
+# --- Lift: the break without its kick, a pad swell, a snare roll into the kick ---
+pattern in2 4
+hats  h . H . h . H h h . H . h h H .
+drums .*32  . . . . S . . g . g . . S . . g | . . . . S . g . . g . . S g . S
+fill  .*48 s . s . s . s . S s S s S S S S
+pad   G3+Bb3+D4+F4 .*7 F3+A3+C4+Eb4 .*7 Eb3+G3+Bb3+D4 .*7 D3+F#3+A3+C4 .*7 G3+Bb3+D4+F4 .*7 F3+A3+C4+Eb4 .*7 Eb3+G3+Bb3+D4 .*7 F3+A3+C4+Eb4 .*5 - .
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+acid.cutoff 200 .*62 380
+acid.level 0.45 .*62 0.85
+pad.level 0.05 .*58 0.55
+
+# --- Build: the full break with a crash; the cutoff and resonance climb ---
+pattern b1 4
+drums K . . . S . . g . g K . S . . g | K . K . S . . g . . K . S . g . | K . . . S . . g . g K . S . . g | K . K . S . g . . g K . S g . S
+hats  h . H . h . H h h . H . h h H .
+fill  c .*63
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+acid.cutoff 380 .*62 650
+acid.res 0.75
+acid.dist 2.5
+
+pattern b2 4
+drums K . . . S . . g . g K . S . . g | K . K . S . . g . . K . S . g . | K . . . S . . g . g K . S . . g | K . . g S . g S . S g S S g S S
+hats  h . H . h . H h h . H . h h H .
+fill  .*48 s . . . s . s . S s S s S S S S
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+stab  . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 D3+F#3+A3+C4 - .*4 | . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 F3+A3+C4+Eb4 - .*4
+acid.cutoff 650 .*62 1000
+
+# --- Main: the sub bass drops in, ride and stabs; the 303 opens wide and closes ---
+pattern m1 4
+drums K . . . S . . g . g K . S . . g | K . K . S . . g . . K . S . g . | K . . . S . . g . g K . S . . g | K . K . S . g . . g K . S g . S
+hats  r . h . r . h h r . h . r h h .
+fill  c .*63
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+sub   G1 .*7 F1 .*7 Eb1 .*7 D1 .*7 G1 .*7 F1 .*7 Eb1 .*7 F1 .*5 - .
+stab  . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 D3+F#3+A3+C4 - .*4 | . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 F3+A3+C4+Eb4 - .*4
+acid.cutoff 1200
+acid.res 0.85
+acid.dist 3.5
+
+pattern m2 4
+drums K . . . S . . g . g K . S . . g | K . K . S . . g . . K . S . g . | K . . . S . . g . g K . S . . g | K . . g S . g S . S g S S g S S
+hats  r . h . r . h h r . h . r h h .
+fill  .*48 s . . . s . s . S s S s S S S S
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+sub   G1 .*7 F1 .*7 Eb1 .*7 D1 .*7 G1 .*7 F1 .*7 Eb1 .*7 F1 .*5 - .
+stab  . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 D3+F#3+A3+C4 - .*4 | . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 F3+A3+C4+Eb4 - .*4
+acid.cutoff 2600 .*62 900
+acid.res 0.9
+
+# --- Break: no kick; the hook over a pad, the 303 squelches the hook at half speed ---
+pattern br1 4
+hats  . . h . . . h . . . h . . . h .
+pad   G3+Bb3+D4+F4 .*7 F3+A3+C4+Eb4 .*7 Eb3+G3+Bb3+D4 .*7 D3+F#3+A3+C4 .*7 G3+Bb3+D4+F4 .*7 F3+A3+C4+Eb4 .*7 Eb3+G3+Bb3+D4 .*7 F3+A3+C4+Eb4 .*7
+lead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . G5 . F#5 . G5 . A5 .
+lead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . C6 . F6 . C6 . - .
+body G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . G5 . F#5 . G5 . A5 .
+body G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . C6 . F6 . C6 . - .
+acid  G2:99 . . . A2:70 . Bb2:80 . A2:99 . . . G2:70 . . . | A2:99 . . . D3:99 . . . A2:80 . . . ~G2 . . .
+acid.cutoff 350
+acid.res 0.95
+pad.level 1
+acid.dist 2
+
+# --- Rise: the 16th line and the kickless break return under a snare roll ---
+pattern br2 4
+drums . . . . S . . g . g . . S . . g | . . . . S . . g . . . . S . g . | . . . . S . . g . g . . S . . g | . . . . S . g . . g . . S g . S
+fill  .*32 s . . . s . . . s . s . s . s . s*8 S s S s S s S s
+pad   G3+Bb3+D4+F4 .*7 F3+A3+C4+Eb4 .*7 Eb3+G3+Bb3+D4 .*7 D3+F#3+A3+C4 .*7 G3+Bb3+D4+F4 .*7 F3+A3+C4+Eb4 .*7 Eb3+G3+Bb3+D4 .*7 F3+A3+C4+Eb4 .*7
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+acid.cutoff 300 .*62 2200
+acid.res 0.95
+
+# --- Drop: everything, the 303 screaming and distorted, closing at the end ---
+pattern d1 4
+drums K . . . S . . g . g K . S . . g | K . K . S . . g . . K . S . g . | K . . . S . . g . g K . S . . g | K . K . S . g . . g K . S g . S
+hats  r . h . r . h h r . h . r h h .
+fill  c .*63
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+sub   G1 .*7 F1 .*7 Eb1 .*7 D1 .*7 G1 .*7 F1 .*7 Eb1 .*7 F1 .*5 - .
+stab  . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 D3+F#3+A3+C4 - .*4 | . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 F3+A3+C4+Eb4 - .*4
+lead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . G5 . F#5 . G5 . A5 .
+lead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . C6 . F6 . C6 . - .
+body G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . G5 . F#5 . G5 . A5 .
+body G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . C6 . F6 . C6 . - .
+acid.cutoff 3200
+acid.res 0.9
+acid.dist 6
+
+pattern d2 4
+drums K . . . S . . g . g K . S . . g | K . K . S . . g . . K . S . g . | K . . . S . . g . g K . S . . g | K . . g S . g S . S g S S g S S
+hats  r . h . r . h h r . h . r h h .
+fill  .*48 s . . . s . s . S s S s S S S S
+acid  G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 G2:99 . F#2:99 F#3:55 G2:99 G3:60 A2:99 ~A3 | G2:99 . A2:70 Bb2:80 A2:99 . G2:70 G3:55 A2:99 . D3:99 . A2:80 A3:60 ~G3 A2:70 | Bb2:99 . C3:70 D3:80 C3:99 . Bb2:70 Bb3:55 C3:99 . F3:99 . C3:80 C4:60 ~Bb3 C3:70
+sub   G1 .*7 F1 .*7 Eb1 .*7 D1 .*7 G1 .*7 F1 .*7 Eb1 .*7 F1 .*5 - .
+stab  . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 D3+F#3+A3+C4 - .*4 | . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 F3+A3+C4+Eb4 - .*4
+lead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . G5 . F#5 . G5 . A5 .
+lead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . C6 . F6 . C6 . - .
+body G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . G5 . F#5 . G5 . A5 .
+body G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . C6 . F6 . C6 . - .
+acid.cutoff 2400 .*62 450
+acid.res 0.8
+acid.dist 2.5
+
+song in1 in2 b1 b2 m1 m2 br1 br2 d1 d2
+loop 2

@@ -1,0 +1,105 @@
+# Wunioid: title / main menu (Remastered), acid techno take 3, "Dark Doh". Harder and darker: a TB-303 drones
+# on G with a Phrygian A-flat, a second 303 plays the hook upside down (mirrored around G: G F Eb F G F C F);
+# the breakdown brings back the original hook bare on the AdLib-like FM lead, and the drop carries it at half
+# speed on a hoover (docs/music.md).
+tempo 130
+steps 4
+echo time=3 feedback=0.5 tone=2500
+reverb time=3.0 tone=6000 predelay=0.035
+master ratio=4 threshold=0.28 loud=1.15
+
+inst drums drums kit=hard gain=0.6 k=1.3 p=1.1 s=0.7 h=1.0 o=0.85 r=0.8 reverb=0.1
+inst fill drums kit=hard gain=0.55 s=1.0 c=1.0 l=0.9 m=0.9 t=0.9 reverb=0.2
+inst drone saw filter=ladder cutoff=100 res=0.7 fenv=3.2 fdecay=0.15 a=0.002 d=0.4 s=0.8 r=0.015 glide=0.07 gate=0.55 dist=3 gain=0.6 level=0.85 duck=0.3
+inst mirror pulse width=0.5 filter=ladder cutoff=250 res=0.85 fenv=2.8 fdecay=0.13 a=0.002 d=0.3 s=0.7 r=0.015 glide=0.06 gate=0.5 dist=4 gain=0.5 level=0.6 echo=0.3 reverb=0.15 pan=-0.15
+inst fmlead fm ratio=1 index=2.0 isus=0.4 idecay=0.2 fb=0.6 a=0.002 d=0.4 s=0.6 r=0.12 gain=0.8 echo=0.45 reverb=0.4
+inst hoover saw voices=7 detune=50 spread=1.0 a=0.02 d=2 s=0.9 r=0.4 vib=10 glide=0.1 cutoff=2600 res=0.15 drive=2 gain=0.4 level=1.4 reverb=0.35 duck=0.4
+inst stab saw voices=3 detune=18 spread=0.5 a=0.002 d=0.1 s=0.0 r=0.06 cutoff=900 res=0.45 fenv=2.6 fdecay=0.07 gain=0.7 echo=0.55 reverb=0.35 mono=0 pan=0.25
+inst pad saw voices=6 detune=35 spread=1.0 a=0.8 d=4 s=0.85 r=1.5 cutoff=1100 gain=0.45 reverb=0.6 mono=0
+
+# --- Intro: a pounding kick and the drone, closed ---
+pattern in1 4
+drums K . h . K . h . K . h . K . h k
+drone G1:99 G1:40 G2:70 G1:40 G1:99 G1:40 Ab1:85 G1:40 G1:99 G2:60 G1:40 ~Ab1 G1:99 G1:40 Bb1:80 G1:50
+drone.cutoff 100
+drone.res 0.7
+
+pattern in2 4
+drums K h o h Kps h o h K h o h Kps h o k
+fill  .*48 s . . . s . s . S s S s S S S S
+drone G1:99 G1:40 G2:70 G1:40 G1:99 G1:40 Ab1:85 G1:40 G1:99 G2:60 G1:40 ~Ab1 G1:99 G1:40 Bb1:80 G1:50
+drone.cutoff 300
+
+# --- Main: the mirrored hook on the second 303, dark stabs ---
+pattern m1 4
+drums Kr h o h Kpsr h o h Kr h o h Kpsr h o k
+fill  c .*63
+drone G1:99 G1:40 G2:70 G1:40 G1:99 G1:40 Ab1:85 G1:40 G1:99 G2:60 G1:40 ~Ab1 G1:99 G1:40 Bb1:80 G1:50
+mirror G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 F3:99 . C3:99 . F3:80 F4:60 ~Eb4 F3:70 | G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 Ab3:99 . G3:80 G4:60 C4:99 ~D4 Eb4:70 F4:60
+stab  . . G3+Bb3+D4 - .*12 | . . Ab3+C4+Eb4 - .*6 G3+Bb3+D4 - .*4
+drone.cutoff 650
+drone.res 0.8
+mirror.cutoff 250
+mirror.res 0.85
+
+pattern m2 4
+drums Kr h o h Kpsr h o h Kr h o k Kpsr h o k
+fill  .*48 l . l . m . m . t t m m l l l l
+drone G1:99 G1:40 G2:70 G1:40 G1:99 G1:40 Ab1:85 G1:40 G1:99 G2:60 G1:40 ~Ab1 G1:99 G1:40 Bb1:80 G1:50
+mirror G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 F3:99 . C3:99 . F3:80 F4:60 ~Eb4 F3:70 | G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 Ab3:99 . G3:80 G4:60 C4:99 ~D4 Eb4:70 F4:60
+stab  . . G3+Bb3+D4 - .*12 | . . Ab3+C4+Eb4 - .*6 G3+Bb3+D4 - .*4
+drone.cutoff 1100 .*62 350
+mirror.cutoff 1800 .*62 2800
+mirror.res 0.93
+mirror.dist 5
+
+# --- Break: no kick; the original hook bare on the FM lead over a dark pad, the drone squelches ---
+pattern br1 4
+drums . . h . . . h . . . h . . . h .
+pad   G3+Bb3+D4 .*31 | Ab3+C4+Eb4 .*15 G3+Bb3+D4 .*15
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . F5 . G5 . D5 . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . Ab5 . F5 . G5 . - .
+drone G1:99 . . . G1:60 . . . Ab1:90 . . . G1:60 . . . | G1:99 . . . G1:60 . . . Bb1:90 . . . ~Ab1 . . .
+drone.cutoff 250
+drone.res 0.96
+drone.dist 2.5
+
+# --- Rise: the mirror 303 returns under a snare roll, both climb ---
+pattern br2 4
+fill  s . . . s . . . s . . . s . . . s . s . s . s . s . s . s . s . s*16 S s S s S s S s S*8
+pad   G3+Bb3+D4 .*31 | Ab3+C4+Eb4 .*15 G3+Bb3+D4 .*15
+drone G1:99 G1:40 G2:70 G1:40 G1:99 G1:40 Ab1:85 G1:40 G1:99 G2:60 G1:40 ~Ab1 G1:99 G1:40 Bb1:80 G1:50
+mirror G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 F3:99 . C3:99 . F3:80 F4:60 ~Eb4 F3:70 | G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 Ab3:99 . G3:80 G4:60 C4:99 ~D4 Eb4:70 F4:60
+drone.cutoff 200 .*62 1300
+mirror.cutoff 300 .*62 2400
+mirror.res 0.9
+
+# --- Drop: the hook at half speed on the hoover, both 303s screaming ---
+pattern d1 4
+drums Kr h o h Kpsr h o h Kr h o h Kpsr h o k
+fill  c .*63
+drone G1:99 G1:40 G2:70 G1:40 G1:99 G1:40 Ab1:85 G1:40 G1:99 G2:60 G1:40 ~Ab1 G1:99 G1:40 Bb1:80 G1:50
+mirror G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 F3:99 . C3:99 . F3:80 F4:60 ~Eb4 F3:70 | G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 Ab3:99 . G3:80 G4:60 C4:99 ~D4 Eb4:70 F4:60
+hoover G4 . . . A4 . Bb4 . A4 . . . G4 . . . | A4 . . . D5 . . . A4 . . . . . . .
+hoover G4 . . . A4 . Bb4 . A4 . . . G4 . . . | F4 . . . G4 . . . D4 . . . . . - .
+stab  . . G3+Bb3+D4 - .*12 | . . Ab3+C4+Eb4 - .*6 G3+Bb3+D4 - .*4
+drone.cutoff 1500
+drone.dist 4.5
+mirror.cutoff 2600
+mirror.dist 6
+
+pattern d2 4
+drums Kr h o h Kpsr h o h Kr h o k Kpsr h o k
+fill  .*48 l . l . m . m . t t m m l l l l
+drone G1:99 G1:40 G2:70 G1:40 G1:99 G1:40 Ab1:85 G1:40 G1:99 G2:60 G1:40 ~Ab1 G1:99 G1:40 Bb1:80 G1:50
+mirror G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 F3:99 . C3:99 . F3:80 F4:60 ~Eb4 F3:70 | G3:99 . F3:70 Eb3:80 F3:99 . G3:70 G4:55 Ab3:99 . G3:80 G4:60 C4:99 ~D4 Eb4:70 F4:60
+hoover Bb4 . . . C5 . D5 . C5 . . . Bb4 . . . | C5 . . . F5 . . . C5 . . . . . . .
+hoover Bb4 . . . A4 . G4 . A4 . . . G4 . . . | . . . . . . . . . . . . - . . .
+stab  . . G3+Bb3+D4 - .*12 | . . Ab3+C4+Eb4 - .*6 G3+Bb3+D4 - .*4
+drone.cutoff 2000 .*62 450
+drone.dist 3
+mirror.cutoff 3000 .*62 500
+mirror.dist 4
+
+song in1 in2 m1 m2 br1 br2 d1 d2
+loop 2

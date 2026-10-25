@@ -1,0 +1,103 @@
+# Wunioid: title / main menu (Remastered), acid techno take 2, "Doh Sequencer". Two TB-303s: one pumps the
+# original's Gm - F | Eb - D bass figure with octave jumps, the other loops a cell cut from the hook
+# (G A Bb A G) like a sequencer; both get their knobs turned against each other. The full hook comes on the
+# AdLib-like FM lead in the breakdown and the drop (docs/music.md).
+tempo 138
+steps 4
+swing 0.1
+echo time=3 feedback=0.5 tone=2800
+reverb time=2.6 tone=7000 predelay=0.03
+master ratio=4 threshold=0.3 loud=1.1
+
+inst drums drums kit=hard gain=0.55 k=1.25 p=1.2 h=1.0 o=0.9 r=0.7 reverb=0.08
+inst fill drums kit=hard gain=0.55 s=1.0 c=1.0 reverb=0.15
+inst bass303 saw filter=ladder cutoff=110 res=0.65 fenv=3.0 fdecay=0.14 a=0.002 d=0.4 s=0.8 r=0.015 glide=0.06 gate=0.55 dist=2.5 gain=0.6 level=1.25 duck=0.25
+inst seq303 pulse width=0.5 filter=ladder cutoff=300 res=0.8 fenv=2.6 fdecay=0.12 a=0.002 d=0.3 s=0.7 r=0.015 glide=0.05 gate=0.5 dist=3 gain=0.5 level=0.6 echo=0.35 reverb=0.12 pan=0.15
+inst fmlead fm ratio=1 index=2.0 isus=0.4 idecay=0.2 fb=0.6 a=0.002 d=0.4 s=0.6 r=0.12 gain=0.8 echo=0.4 reverb=0.35 pan=-0.1
+inst stab saw voices=3 detune=16 spread=0.5 a=0.002 d=0.08 s=0.0 r=0.05 cutoff=1200 res=0.4 fenv=2.4 fdecay=0.06 gain=0.7 echo=0.5 reverb=0.3 mono=0 pan=-0.25
+inst pad saw voices=6 detune=30 spread=1.0 a=0.6 d=3 s=0.85 r=1.2 cutoff=1400 gain=0.45 reverb=0.55 mono=0
+
+# --- Intro: kick, hats and the bass 303, closed ---
+pattern in1 4
+drums K . h . K . h . K . h . K . h .
+bass303 G1:99 G1:45 G2:80 G1:45 G1:99 G2:60 ~F2 G1:50 F1:99 F1:45 F2:80 F1:45 F1:99 F2:60 ~Eb2 F1:50 | Eb1:99 Eb1:45 Eb2:80 Eb1:45 Eb1:99 Eb2:60 ~D2 Eb1:50 D1:99 D1:45 D2:80 D1:45 D1:99 D2:60 ~C2 D1:50
+bass303.cutoff 110
+bass303.res 0.65
+
+pattern in2 4
+drums K h o h Kp h o h K h o h Kp h o h
+fill  .*48 s . . . s . s . S s S s S S S S
+bass303 G1:99 G1:45 G2:80 G1:45 G1:99 G2:60 ~F2 G1:50 F1:99 F1:45 F2:80 F1:45 F1:99 F2:60 ~Eb2 F1:50 | Eb1:99 Eb1:45 Eb2:80 Eb1:45 Eb1:99 Eb2:60 ~D2 Eb1:50 D1:99 D1:45 D2:80 D1:45 D1:99 D2:60 ~C2 D1:50
+bass303.cutoff 260
+
+# --- Main: the sequencer 303 joins with the hook cell; the two filters move against each other ---
+pattern m1 4
+drums Kr h o h Kpr h o h Kr h o h Kpr h o h
+fill  c .*63
+bass303 G1:99 G1:45 G2:80 G1:45 G1:99 G2:60 ~F2 G1:50 F1:99 F1:45 F2:80 F1:45 F1:99 F2:60 ~Eb2 F1:50 | Eb1:99 Eb1:45 Eb2:80 Eb1:45 Eb1:99 Eb2:60 ~D2 Eb1:50 D1:99 D1:45 D2:80 D1:45 D1:99 D2:60 ~C2 D1:50
+seq303 G3:99 A3:60 Bb3:80 A3:99 G3:60 . G3:99 A3:60 Bb3:80 A3:99 G3:60 . D4:99 ~C4 Bb3:70 A3:60
+bass303.cutoff 700
+bass303.res 0.8
+seq303.cutoff 250
+seq303.res 0.8
+
+pattern m2 4
+drums Kr h o h Kpr h o h Kr h o k Kpr h o h
+fill  .*48 s . . . s . s . S s S s S S S S
+bass303 G1:99 G1:45 G2:80 G1:45 G1:99 G2:60 ~F2 G1:50 F1:99 F1:45 F2:80 F1:45 F1:99 F2:60 ~Eb2 F1:50 | Eb1:99 Eb1:45 Eb2:80 Eb1:45 Eb1:99 Eb2:60 ~D2 Eb1:50 D1:99 D1:45 D2:80 D1:45 D1:99 D2:60 ~C2 D1:50
+seq303 G3:99 A3:60 Bb3:80 A3:99 G3:60 . G3:99 A3:60 Bb3:80 A3:99 G3:60 . D4:99 ~C4 Bb3:70 A3:60
+stab  . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 D3+F#3+A3+C4 - .*4
+bass303.cutoff 1500 .*62 400
+seq303.cutoff 1400 .*62 3000
+seq303.res 0.92
+
+# --- Break: no kick; the AdLib hook over a pad, the sequencer squelches on ---
+pattern br1 4
+drums . . h . . . h . . . h . . . h .
+pad   G3+Bb3+D4+F4 .*15 F3+A3+C4+Eb4 .*15 | Eb3+G3+Bb3+D4 .*15 D3+F#3+A3+C4 .*15
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . F5 . G5 . D5 . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . A5 . F5 . G5 . - .
+seq303 G3:99 A3:60 Bb3:80 A3:99 G3:60 . G3:99 A3:60 Bb3:80 A3:99 G3:60 . D4:99 ~C4 Bb3:70 A3:60
+seq303.cutoff 400
+seq303.res 0.96
+seq303.echo 0.6
+
+# --- Rise: the bass returns under a snare roll, both filters climb ---
+pattern br2 4
+fill  s . . . s . . . s . . . s . . . s . s . s . s . s . s . s . s . s*16 S s S s S s S s S*8
+pad   G3+Bb3+D4+F4 .*15 F3+A3+C4+Eb4 .*15 | Eb3+G3+Bb3+D4 .*15 D3+F#3+A3+C4 .*15
+bass303 G1:99 G1:45 G2:80 G1:45 G1:99 G2:60 ~F2 G1:50 F1:99 F1:45 F2:80 F1:45 F1:99 F2:60 ~Eb2 F1:50 | Eb1:99 Eb1:45 Eb2:80 Eb1:45 Eb1:99 Eb2:60 ~D2 Eb1:50 D1:99 D1:45 D2:80 D1:45 D1:99 D2:60 ~C2 D1:50
+seq303 G3:99 A3:60 Bb3:80 A3:99 G3:60 . G3:99 A3:60 Bb3:80 A3:99 G3:60 . D4:99 ~C4 Bb3:70 A3:60
+bass303.cutoff 150 .*62 1200
+seq303.cutoff 400 .*62 2500
+seq303.echo 0.35
+
+# --- Drop: both 303s open and distorted, the FM lead plays the hook on top ---
+pattern d1 4
+drums Kr h o h Kpr h o h Kr h o h Kpr h o h
+fill  c .*63
+bass303 G1:99 G1:45 G2:80 G1:45 G1:99 G2:60 ~F2 G1:50 F1:99 F1:45 F2:80 F1:45 F1:99 F2:60 ~Eb2 F1:50 | Eb1:99 Eb1:45 Eb2:80 Eb1:45 Eb1:99 Eb2:60 ~D2 Eb1:50 D1:99 D1:45 D2:80 D1:45 D1:99 D2:60 ~C2 D1:50
+seq303 G3:99 A3:60 Bb3:80 A3:99 G3:60 . G3:99 A3:60 Bb3:80 A3:99 G3:60 . D4:99 ~C4 Bb3:70 A3:60
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | G5 . A5 Bb5 A5 . G5 . F5 . G5 . D5 . . .
+fmlead G5 . A5 Bb5 A5 . G5 . A5 . D6 . A5 . . .  | Bb5 . C6 D6 C6 . Bb5 . A5 . F5 . G5 . - .
+stab  . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 D3+F#3+A3+C4 - .*4
+bass303.cutoff 1600
+bass303.dist 4
+seq303.cutoff 2000
+seq303.dist 5
+
+pattern d2 4
+drums Kr h o h Kpr h o h Kr h o k Kpr h o h
+fill  .*48 s . . . s . s . S s S s S S S S
+bass303 G1:99 G1:45 G2:80 G1:45 G1:99 G2:60 ~F2 G1:50 F1:99 F1:45 F2:80 F1:45 F1:99 F2:60 ~Eb2 F1:50 | Eb1:99 Eb1:45 Eb2:80 Eb1:45 Eb1:99 Eb2:60 ~D2 Eb1:50 D1:99 D1:45 D2:80 D1:45 D1:99 D2:60 ~C2 D1:50
+seq303 G3:99 A3:60 Bb3:80 A3:99 G3:60 . G3:99 A3:60 Bb3:80 A3:99 G3:60 . D4:99 ~C4 Bb3:70 A3:60
+fmlead D6 . . C6 Bb5 . A5 . G5 . A5 . F5 . . .   | G5 . . A5 Bb5 . C6 . D6 . . . . . - .
+fmlead D6 . . C6 Bb5 . A5 . G5 . A5 . C6 . . .   | Bb5 . A5 . G5 . F#5 . G5 . . . - . . .
+stab  . . G3+Bb3+D4+F4 - .*6 F3+A3+C4+Eb4 - .*4 | . . Eb3+G3+Bb3+D4 - .*6 D3+F#3+A3+C4 - .*4
+bass303.cutoff 2200 .*62 500
+bass303.dist 2.5
+seq303.cutoff 3200 .*62 600
+seq303.dist 3
+
+song in1 in2 m1 m2 br1 br2 d1 d2
+loop 2

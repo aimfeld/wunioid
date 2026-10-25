@@ -196,17 +196,39 @@ Remastered is the default (user, session 6). First version in place; needs the u
 - [x] Synth additions (session 9): `pluck` (Karplus-Strong, tuned within 2 cents; with `hpf`, `drive`, `cutoff`
   a distorted guitar), a `rock` drum kit, `level` (gain after the drive), master `loud`, `--levels` (mixing by
   numbers: each instrument's level and spectrum).
-- [ ] **User:** pick a menu version: metal (140 BPM) or techno (132 BPM); draft 1 (synth-pop) was too tame.
+- [x] **User:** techno over metal; decision: TB-303-dominated acid techno with knob turning and heavy beats.
+- [x] Synth for acid (session 9): `filter=ladder` (4-pole, 24 dB/octave, measured: −12 dB at the cutoff,
+  +17 dB peak at res 0.95, stable under fast sweeps), knob automation lines (`acid.cutoff 300 .*62 2400`),
+  `swing`, `gate`, `dist` (after the filter), `kit=hard`, `x*N` token repetition.
+- [x] **User:** take 1 ("Acid Doh") is the favourite; its FM lead (breakdown, drop) is "very lame".
+- [x] **User:** of SH-101, JP-8000 supersaw and Alpha Juno hoover leads for take 1, the SH-101 is best, "room
+  for improvements". Synth: `stack`/`stackgain` (extra voices, e.g. a sub-octave), `bend`/`bendtime`.
+- [x] **User:** of three SH-101-based leads (PWM + Juno chorus, hard sync, a second 303), the hard-sync lead is
+  best, "still a bit soft", and the melody should match the original more. Synth: `pwm`/`pwmrate`, `chorus`,
+  `sync`/`syncenv`/`syncdecay`.
+- [x] **User:** of two versions with a louder sync lead (doubled by a square an octave below) playing the hook
+  exactly, over the original's harmony (Gm – F | E♭ – D | Gm – F | E♭ – F), the one where the 303 plays the full
+  four-bar hook too is better; written into `menu_acid1.txt`.
+- [x] **User:** a smoother buildup without the kick from the start: 8 bars of the 303 fading in, hats, a pad
+  swell and a snare roll; the kick at bar 9 (the loop start).
+- [ ] **User:** listen to the new intro of `menu_acid1.txt`.
 - [x] `tools/music/synth.py` (session 9): text scores (format in its docstring) → WAV + MP3 + loop points
   (JSON); 2-op FM, band-limited saw/pulse with detune and a resonant low-pass, tracker arpeggios, glides,
   synthesized 808/909-style drums, ping-pong echo, reverb, ducking by the kick, bus compressor, soft clipper.
   The loop region holds a second pass, so tails carry over the seam. About 50 s for a 3-minute song.
   Tempo 128 BPM for the menu track (user).
-- [ ] Menu track (the nod) in the chosen style; refine with the user by ear.
-- [ ] `src/audio/music.ts`: Web Audio buffer loop, menu track / level track (level − 1) mod 6, fades at level end
-  and game over, silent when paused or in the background, Remastered only; music on/off and volume in the
+- [x] Session 13: drum'n'bass instead of techno (user: "I was a big drum'n'bass fan at the time"), then liquid
+  ("more chill"): five takes, **the menu track is `menu_liquid4.txt` "Deep Water"** (reese, harp, choir lead on
+  the hook at half time) with the short roll into the melody ([music.md](music.md)). Synth: `kit=break` (a funk kit
+  band-limited like a sampled break), ghost snare `g`, drum-kit `drive`. `tools/music/gen_liquid.py` writes the
+  five liquid scores.
+- [ ] **Next:** the full version of the menu track (from `menu_liquid4.txt`, the nod to the original kept).
+- [ ] **Next:** 20 full level-track candidates, the user picks the best: (liquid) drum'n'bass and acid techno with
+  the TB-303 (like `menu_acid1.txt`).
+- [ ] `src/audio/music.ts`: Web Audio buffer loop, menu track / level track (level − 1) mod N (N = tracks
+  picked), fades at level end and game over, silent when paused or in the background, Remastered only; music on/off and volume in the
   menus; balance against the SFX.
-- [ ] Level tracks 1–6.
+- [ ] Level tracks: the picked candidates, refined by ear.
 - [ ] Service worker: cache the music best effort, as Dark Planet's media.
 
 ### Phase 4: Editors and release 🔄 (session 10, 2026-10-25)
@@ -275,5 +297,6 @@ User (session 10): the editors didn't work in the remake (they were view only); 
     original's Windows menu bar and dialogs (session 6).
 13. Remastered is the default; switch at any time with R or the menus (session 6).
 14. Remastered gets music (session 9): the title/main menu plays an original track that nods to the *Revenge
-    of Doh* (DOS) title music; the levels play 6 independent tracks in 1999 game-music style, repeating every 6
-    levels. Made as text scores rendered by a Python synth to MP3 ([music.md](music.md)).
+    of Doh* (DOS) title music; the levels play independent tracks in 1999 game-music style, repeating (6
+    planned; session 13: the user picks N of 20 candidates). Menu track: liquid drum'n'bass (session 13). Made as
+    text scores rendered by a Python synth to MP3 ([music.md](music.md)).
