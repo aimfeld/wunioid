@@ -148,10 +148,23 @@ Remastered is the default (user, session 6). First version in place; needs the u
   Remastered files can't load, Classic shows.
 - [x] `tools/screenshot.mjs`: `MODE=classic|remastered`; Remastered steps save the window; DEV globals `menu`,
   `startCourse()`, `pause()`.
-- [ ] **User:** play Remastered on desktop and the phone: the look of the re-renders (capsules, paddle, Bubbler,
-  frame), the effects (too much? too little?), the HUD, the menus, smoothness at 60/120 Hz.
+- [ ] **User:** play Remastered on desktop and the phone: the look of the re-renders (capsules, magic gems, paddle,
+  Bubbler, frame), the effects (too much? too little?), the HUD, the menus, smoothness at 60/120 Hz.
 - [x] User (session 7): weaker light around the balls and the paddle (about half the size and brightness). The
   ball's trail glides with the ball (sampled along the interpolated path) instead of stepping at the tick rate.
+- [x] Gems closer to the originals (user, session 7). **Capsules** are 3D models, as in 1999: a cut gem (the
+  tangent planes of a box rounded by an ellipsoid: flat facets, 8 around the long axis, 4 tiers towards the ends),
+  ray-traced exactly as a convex polyhedron, rolling 360° about its long axis over the 19 frames (frame 9.5 faces
+  us), with the label extruded 2 px out of its front face (Liberation Sans Bold, ray-marched) and seen faintly
+  through the glass, upside down, from behind (as in the originals' frames 0–2 and 16–18). Before, the capsule was
+  a cylinder with the label painted on. User: "very close to the original now". **Still gems** come from the same
+  renderer (`gem_body`), facing us: octagonal across (bevels about 30 % of the height, as the originals') with one
+  chamfer at the ends (the originals' octagon outline), lighter and less saturated than the capsules, as in the
+  originals. The body colour is limited softly by its main channel, so lit facets keep their order of brightness
+  and the hue stays; the gloss goes on top. **Magic gems** (attribute Bonus) pulse with light from within instead
+  of a glint sweeping across: the original's frames 0 → 5 → 10 brighten the whole stone, its shadowed facets most
+  (pulse = sin(π f / 10)^0.5: the light × 1.25 plus a little of the gem's colour); toned down (user) so the cut
+  stays visible when fully lit. The view adds a faint halo with the same pulse.
 - [ ] Subtle, irregular jerks in the ball's motion on the user's desktop: the display path, not the game, as far as
   measured; set aside by the user (session 7). Details, measurements and what is left to try:
   [known-issues.md](known-issues.md).

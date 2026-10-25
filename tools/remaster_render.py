@@ -2,10 +2,11 @@
 
 The 1999 sprites are small pre-rendered 3D pictures (30 x 15 gems, 12 px balls), so upscaling them only blurs
 them (session 6: Lanczos, hq4x and xBR compared). This tool draws the same objects again: every sprite is a height
-field (a bevelled octagon for the stones, a cylinder for the capsules, a sphere for the balls, tubes for the
-paddle's cage) shaded with a light from the top left, supersampled 4 x 4 and stored at 4x the original size, so the
-remaster draws it at the original position and size. Colours are sampled from the originals; every animation has
-the original's frame count and meaning (the gems' glint, the capsules' rolling label, the piercing ball's colour
+field (a bevelled octagon for the other stones, a sphere for the balls, tubes for the paddle's cage) or, for the
+gems and the capsules, a ray-traced 3D model (a cut gem; the capsule's with an extruded label), shaded with a light
+from the top left, supersampled 4 x 4 and stored at 4x the original size, so the remaster draws it at the original
+position and size. Colours are sampled from the originals; every animation has the original's frame count and
+meaning (the magic gems' light from within, the capsules rolling about their long axis, the piercing ball's colour
 cycle, the Killer's colour cycle, Bubbler's water, the Eater's and Doubler's clouds). The background tiles are
 upscaled (Lanczos, wrapped so they tile without seams). Not drawn: the shatter animations (particles in the
 remaster), the banners (text in the remaster), the editor's attribute labels and palette (Phase 4).
@@ -171,20 +172,6 @@ def stone_shape(w=30, h=15, ch=4.0, b=4.2):
     return x, y, d, bevel(d, b)
 
 
-def gem(col, glint=0.0, w=30, h=15):
-    """A glossy gem. glint 0..1: the light sweep of the animated (bonus) gem, 0 = plain."""
-    x, y, d, z = stone_shape(w, h)
-    n = normals(z)
-    base = saturate(hexrgb(col), 1.15)
-    glow = np.exp(-(((x - w / 2) / (w * 0.32)) ** 2 + ((y - h * 0.62) / (h * 0.3)) ** 2))[..., None]
-    c = shade(n, base, amb=0.32, dif=0.75, spec=0.85, shin=36, env=0.3) + glow * base * 0.35
-    if glint > 0:
-        pos = -6 + glint * (w + 12)  # a diagonal band from left to right
-        band = np.exp(-((x + (y - h / 2) * 0.8 - pos) / 2.6) ** 2)[..., None]
-        c = c + band * (0.55 * np.sin(np.pi * glint)) * (0.6 + 0.4 * base) + 0.12 * np.sin(np.pi * glint) * base
-    return finish(c * edge_dark(d), coverage(d))
-
-
 def rough(col, seed, grain=0.55, w=30, h=15, tint_var=0.25, gloss=0.25):
     """Granite / ore: the bevelled slab with a bumpy, grainy surface."""
     x, y, d, z = stone_shape(w, h)
@@ -252,7 +239,7 @@ def killer(frame, w=30, h=15):
     return finish(c * edge_dark(d), coverage(d))
 
 
-# ---- capsules (30 x 20, 19 frames: the label rolls over the front from the top down)
+# ---- capsules (30 x 20, 19 frames: the gem rolls about its long axis, its 3D label coming over the top)
 
 CAPSULES = {  # name: (body, label, label colour)
     'B$Red': ('#ee4139', '$$$', '#ffe23a'), 'B1Up': ('#e64141', '1UP', '#dcdcdc'),
@@ -265,48 +252,193 @@ CAPSULES = {  # name: (body, label, label colour)
     'BZup': ('#c539c5', 'Zup', '#dcdcdc'), 'BEnd': ('#c539c5', 'End', '#dcdcdc'),
 }
 CAPSULE_FRAMES = 19
+LABEL_FONT = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
+# The capsule is a 3D model, as in 1999: a cut gem (the tangent planes of a box rounded by an ellipsoid, so it has
+# flat facets, 8 around the long axis) with the label standing out of its front face. Object space: x along the
+# gem, y down, z out of the front face; original px from the frame's centre.
+CAP_BOX = np.array([15.0, 7.7, 7.7])  # half extents
+CAP_ROUND = np.array([11.0, 5.6, 5.6])  # the rounding ellipsoid's semi-axes
+CAP_TEXT_H = 9.0  # the label's cap height
+CAP_TEXT_W = 25.0  # at most this wide (longer labels are squeezed)
+CAP_TEXT_D = 2.0  # how far the label stands out of the front face
+
+
+def gem_planes(box, rnd, tiers=(0.0, 0.42, 0.85, 1.25)):
+    """The cut gem with half extents box: the tangent planes of the box rounded by an ellipsoid with semi-axes rnd,
+    in 8 directions around the long axis, tilted towards the ends by the angles tiers."""
+    dirs = [(1, 0, 0), (-1, 0, 0)]
+    for phi in np.arange(8) * np.pi / 4:
+        for a in tiers:
+            for sx in ((1,) if a == 0 else (1, -1)):
+                dirs.append((sx * np.sin(a), np.cos(a) * np.sin(phi), np.cos(a) * np.cos(phi)))
+    n = np.array(dirs, float)
+    n /= np.linalg.norm(n, axis=1, keepdims=True)
+    h = (np.abs(n) * (box - rnd)).sum(1) + np.sqrt(((n * rnd) ** 2).sum(1))
+    return n, h
+
+
+CAP_PLANES = gem_planes(CAP_BOX, CAP_ROUND)
+CAP_FACE = CAP_PLANES[1][np.argmax(CAP_PLANES[0][:, 2])]  # z of the front face
+# the still gem (30 x 15): the same model, filling the stone's cell but for the 0.45 px gap the stones keep, round
+# across (an octagon), so seen from the front its bevels are as wide as the originals' (about 30 % of the height),
+# its ends one chamfer like theirs (an octagon outline, the top row 20 of 30 px)
+STONE_BOX = np.array([15 - 0.45, 7.5 - 0.45, 7.05])
+STONE_PLANES = gem_planes(STONE_BOX, np.array([8.0, 7.05, 7.05]), (0.0, 0.8))
 _label_cache = {}
+
+
+def cap_label(label):
+    """The label's mask in object x, y (R samples per px over 30 x 20 px from (-15, -10)), and its smoothed copy."""
+    if label not in _label_cache:
+        f = ImageFont.truetype(LABEL_FONT, int(CAP_TEXT_H / 0.716 * R))  # Liberation Sans: cap height 0.716 em
+        bb = ImageDraw.Draw(Image.new('L', (1, 1))).textbbox((0, 0), label, font=f, anchor='ls')
+        cap = int(CAP_TEXT_H * R)
+        tmp = Image.new('L', (bb[2] - bb[0] + 4 * R, bb[3] - bb[1] + 4 * R), 0)
+        ImageDraw.Draw(tmp).text((2 * R - bb[0], 2 * R - bb[1]), label, font=f, fill=255, anchor='ls')
+        tw = min(tmp.width, int((CAP_TEXT_W + 4) * R))
+        tmp = tmp.resize((tw, tmp.height), Image.LANCZOS)
+        img = Image.new('L', (30 * R, 20 * R), 0)
+        # the cap height centred on the face (the baseline sits at 2R - bb[1] in tmp)
+        img.paste(tmp, ((30 * R - tw) // 2, 10 * R + cap // 2 - (2 * R - bb[1])))
+        m = np.array(img) / 255.0
+        mb = np.array(img.filter(ImageFilter.GaussianBlur(0.35 * R))) / 255.0
+        gy, gx = np.gradient(mb, 1 / R)
+        _label_cache[label] = (m, gx, gy)
+    return _label_cache[label]
+
+
+def convex_hit(o, d, n, h):
+    """Rays o + t d (o: (N, 3), d: (3,)) against the solid n . p <= h: entry t, exit t, entry plane."""
+    nd = n @ d
+    nd = np.where(np.abs(nd) < 1e-9, 1e-9, nd)
+    t = (h[None] - o @ n.T) / nd[None]
+    enter = np.where(nd[None] < 0, t, -np.inf)
+    leave = np.where(nd[None] > 0, t, np.inf)
+    k = enter.argmax(1)
+    t0, t1 = enter[np.arange(len(o)), k], leave.min(1)
+    return np.where(t0 < t1, t0, np.inf), t1, k
+
+
+def label_hit(o, d, label, steps=96):
+    """Rays against the extruded label: hit t (inf where missed) and the object-space normal."""
+    m, gx, gy = cap_label(label)
+    z0, z1 = CAP_FACE - 0.6, CAP_FACE + CAP_TEXT_D
+    rows = np.where(m.max(1) > 0)[0]
+    y0, y1 = rows[0] / R - 10 - 0.1, (rows[-1] + 1) / R - 10 + 0.1
+
+    def span(o_, d_, a, b):
+        if abs(d_) < 1e-9:
+            inside = (o_ >= a) & (o_ <= b)
+            return np.where(inside, -np.inf, np.inf), np.where(inside, np.inf, -np.inf)
+        ta, tb = (a - o_) / d_, (b - o_) / d_
+        return np.minimum(ta, tb), np.maximum(ta, tb)
+
+    za, zb = span(o[:, 2], d[2], z0, z1)
+    ya, yb = span(o[:, 1], d[1], y0, y1)
+    ta, tb = np.maximum(za, ya), np.minimum(zb, yb)
+    t_hit = np.full(len(o), np.inf)
+    nrm = np.zeros((len(o), 3))
+    idx = np.where(ta < tb)[0]
+    if not len(idx):
+        return t_hit, nrm
+    ix = np.clip(((o[idx, 0] + 15) * R).astype(int), 0, 30 * R - 1)
+
+    def inside(t):
+        oy = o[idx, 1, None] if t.ndim == 2 else o[idx, 1]
+        iy = np.clip(((oy + t * d[1] + 10) * R).astype(int), 0, 20 * R - 1)
+        return m[iy, ix[:, None] if t.ndim == 2 else ix] > 0.5
+
+    ts = ta[idx, None] + (tb[idx] - ta[idx])[:, None] * np.linspace(0, 1, steps)[None]
+    ins = inside(ts)
+    got = ins.any(1)
+    k = ins.argmax(1)
+    lo = np.where(k > 0, ts[np.arange(len(idx)), np.maximum(k - 1, 0)], ta[idx])
+    hi = ts[np.arange(len(idx)), k]
+    for _ in range(8):  # refine the side walls' crossing
+        mid = (lo + hi) / 2
+        im = inside(mid)
+        lo, hi = np.where(im, lo, mid), np.where(im, mid, hi)
+    th = np.where(k > 0, hi, ta[idx])
+    p = o[idx] + th[:, None] * d[None]
+    iy = np.clip(((p[:, 1] + 10) * R).astype(int), 0, 20 * R - 1)
+    ix2 = np.clip(((p[:, 0] + 15) * R).astype(int), 0, 30 * R - 1)
+    gxs, gys = gx[iy, ix2], gy[iy, ix2]
+    top = (k == 0) & (np.abs(p[:, 2] - z1) < 1e-3)
+    bottom = (k == 0) & (np.abs(p[:, 2] - z0) < 1e-3)
+    nn = np.stack([-gxs, -gys, np.zeros_like(gxs)], -1)  # the side walls
+    nn[top] = np.stack([-0.35 * gxs[top], -0.35 * gys[top], np.ones(top.sum())], -1)  # rounded letter edges
+    nn[bottom] = (0, 0, -1)
+    ln = np.linalg.norm(nn, axis=1, keepdims=True)
+    nn = np.where(ln > 1e-6, nn / np.maximum(ln, 1e-6), np.array([0, 0, 1.0]))
+    t_hit[idx] = np.where(got, th, np.inf)
+    nrm[idx] = nn
+    return t_hit, nrm
+
+
+def view_rays(w, h, th):
+    """Orthographic rays along -z through the samples of a w x h frame, into the object space of a gem turned by th
+    about its long axis (x). Returns the sample grid's shape, origins, the direction and the normals' way back."""
+    x, y = grid(w, h)
+    c, s = np.cos(th), np.sin(th)
+    X, Y, Z = x.ravel() - w / 2, y.ravel() - h / 2, 50.0
+    o = np.stack([X, Y * c + Z * s, -Y * s + Z * c], -1)
+    d = np.array([0.0, -s, -c])
+
+    def to_world(n):
+        return np.stack([n[:, 0], n[:, 1] * c - n[:, 2] * s, n[:, 1] * s + n[:, 2] * c], -1)
+    return x.shape, o, d, to_world
+
+
+def soft(v, knee=0.6):
+    """1 at most, approached smoothly above knee (monotonic, so brighter stays brighter)."""
+    return np.where(v < knee, v, knee + (1 - knee) * np.tanh((v - knee) / (1 - knee)))
+
+
+def gem_body(planes, col, o, d, to_world, pulse=0.0, amb=0.25, inner=0.3, sat=1.3):
+    """The cut gem's colour along each ray, where it hits, and the entry t. The body colour is limited softly by its
+    main channel (the hue stays, and lit facets keep their order of brightness instead of clipping), the gloss goes
+    on top; inner: the light inside the glass, most through its thick middle. pulse 0..1: the magic gem's light from
+    within, brightening the whole stone, its shadowed facets most."""
+    pn, ph = planes
+    t0, t1, k = convex_hit(o, d, pn, ph)
+    hit = np.isfinite(t0)
+    bc = saturate(hexrgb(col), sat, 0.95)
+    n = to_world(pn[k])
+    body = shade(n, bc, amb=amb, dif=0.8, spec=0, env=0)
+    gloss = shade(n, bc * 0, amb=0, dif=0, spec=0.85, shin=40, env=0.28)
+    thick = np.where(hit, t1 - t0, 0)
+    core = np.clip(thick / 16, 0, 1) ** 2
+    body = body * (1 + 0.25 * pulse) + bc[None] * (inner * core + pulse * (0.12 + 0.1 * core))[:, None]
+    m = np.maximum(body[:, np.argmax(bc)], 1e-6)
+    c = body * (soft(m, 0.7) / m)[:, None] + gloss
+    c = c * (1 - 0.55 * (1 - np.clip(thick / 1.1, 0, 1)))[:, None]  # the dark outline
+    return c, hit, t0
+
+
+def gem(col, pulse=0.0, w=30, h=15):
+    """A still gem, facing us. pulse 0..1: the light from within of the magic (Bonus) gem's animation, 0 = plain;
+    the original's frames brighten the whole stone by about a third, its shadowed facets most."""
+    shape, o, d, to_world = view_rays(w, h, 0.0)
+    c, hit, _ = gem_body(STONE_PLANES, col, o, d, to_world, pulse, amb=0.38, inner=0.12, sat=1.05)
+    return finish(c.reshape(shape + (3,)), hit.astype(float).reshape(shape))
 
 
 def capsule(name, frame, w=30, h=20):
     body, label, lcol = CAPSULES[name]
-    x, y = grid(w, h)
-    d = octagon(x, y, w, h, 4.5, 0.5)
-    r = h / 2 - 0.5
-    yy = np.clip((y - h / 2) / r, -0.999, 0.999)
-    cyl = np.sqrt(1 - yy ** 2) * r
-    ends = np.minimum(x, w - x)  # the drum rounds off towards its ends
-    te = np.clip(ends / 7.0, 0, 1)
-    z = cyl * (1 - (1 - te) ** 2) ** 0.7 * np.clip(d / 0.8, 0, 1) ** 0.5
-    # the label on the cylinder: arc length from the front, rolled by the frame
-    phi = np.arcsin(yy)
-    roll = 2 * np.pi * (frame - 9.5) / CAPSULE_FRAMES
-    v = (phi - roll)  # angle on the drum, 0 = the label's centre line
-    v = (v + np.pi) % (2 * np.pi) - np.pi
-    key = (label, w)
-    if key not in _label_cache:
-        lh = 64  # label texture: x in samples, v in [-pi/2, pi/2] over lh rows
-        f = ImageFont.truetype(FONT, int(8.6 * R) if len(label) < 4 else int(7.6 * R))
-        img = Image.new('L', (w * R, lh * R), 0)
-        dr = ImageDraw.Draw(img)
-        bb = dr.textbbox((0, 0), label, font=f)
-        tw, th = bb[2] - bb[0], bb[3] - bb[1]
-        # the label spans about 1.3 rad of the drum, squeezed onto lh rows
-        tmp = Image.new('L', (tw + 4 * R, th + 4 * R), 0)
-        ImageDraw.Draw(tmp).text((2 * R - bb[0], 2 * R - bb[1]), label, font=f, fill=255)
-        tmp = tmp.resize((min(w * R - 2 * R, tmp.width), int(lh * R * 0.42)), Image.LANCZOS)
-        img.paste(tmp, ((w * R - tmp.width) // 2, (lh * R - tmp.height) // 2))
-        _label_cache[key] = (np.array(img) / 255.0, lh)
-    tex, lh = _label_cache[key]
-    row = np.clip(((v / np.pi) + 0.5) * (lh * R), 0, lh * R - 1).astype(int)
-    col = np.clip((x * R).astype(int), 0, w * R - 1)
-    m = tex[row, col] * (np.abs(v) < np.pi / 2) * np.clip(d / 1.2, 0, 1)
-    z = z + m * 0.18
-    n = normals(z)
-    bc = saturate(hexrgb(body), 1.2)
-    base = bc * (1 - m[..., None]) + hexrgb(lcol) * m[..., None]
-    c = shade(n, base, amb=0.3, dif=0.78, spec=0.85, shin=40, env=0.32)
-    return finish(c * edge_dark(d), coverage(d))
+    # the gem turned by th about its long axis (frame 9.5: the label faces us)
+    shape, o, d, to_world = view_rays(w, h, -2 * np.pi * (frame - 9.5) / CAPSULE_FRAMES)
+    cg, gem_hit, tg0 = gem_body(CAP_PLANES, body, o, d, to_world)
+    tt, tn = label_hit(o, d, label)
+    txt_hit = np.isfinite(tt)
+    bc = saturate(hexrgb(body), 1.3, 0.95)
+    lc = hexrgb(lcol)
+    ct = shade(to_world(tn), lc, amb=0.5, dif=0.7, spec=0.6, shin=30, env=0.2)
+    front = txt_hit & (tt <= tg0)
+    behind = txt_hit & gem_hit & (tt > tg0)  # the label seen through the gem from behind
+    rgb = np.where(front[:, None], ct, cg)
+    rgb = np.where(behind[:, None], rgb * 0.7 + 0.3 * (ct * 0.5 + 0.5 * lc * bc), rgb)
+    alpha = (gem_hit | txt_hit).astype(float)
+    return finish(rgb.reshape(shape + (3,)), alpha.reshape(shape))
 
 
 # ---- balls
@@ -496,7 +628,7 @@ def frame_border(w=428, h=480, border=16):
 def sprites(data):
     out = {}
     for name, col in GEMS.items():
-        out[name] = [gem(col, 0.0)] + [gem(col, f / 10) for f in range(1, 10)] + [gem(col, 0.0)]
+        out[name] = [gem(col, np.sin(np.pi * f / 10) ** 0.5) for f in range(10)] + [gem(col, 0.0)]
     out['Granit'] = [rough('#b4b6b8', 1, grain=0.7, tint_var=0.45)]
     out['Block'] = [rough('#d6c838', 2, grain=0.6, tint_var=0.35, gloss=0.35)]
     out['BeBack'] = [rough('#dcb428', 3, grain=0.75, tint_var=0.45, gloss=0.45)]

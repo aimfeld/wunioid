@@ -6,9 +6,10 @@
 // Effects come from comparing the state of two ticks (afterTick), so a paused game spawns nothing and its particles
 // stand still: a stone that shatters bursts into splinters of its colour (instead of the shatter animation), a
 // stone that takes a hit and stays flashes, the ball throws sparks off the paddle, a collected capsule leaves a ring,
-// shots get a muzzle flash and sparks where they end. Balls, shots and capsules glow and light the floor, balls
-// leave a short trail, everything casts a shadow on the background, which is dimmed towards its edges. Losing the
-// ball shakes the picture; a new level fades in. The banners are text in the TextImageList's colours.
+// shots get a muzzle flash and sparks where they end. Balls, shots, capsules and magic gems glow, the first three
+// light the floor, balls leave a short trail, everything casts a shadow on the background, which is dimmed towards
+// its edges. Losing the ball shakes the picture; a new level fades in. The banners are text in the TextImageList's
+// colours.
 //
 // Layout: the picture is the original's 640 x 480 (the playfield in the frame and the HUD panel right of it), or in
 // a phone's portrait window the playfield under a HUD strip, scaled to fill the area (not integer: nothing here is
@@ -16,7 +17,7 @@
 
 import { Application, Container, Graphics, Sprite as PixiSprite, Text, TilingSprite } from 'pixi.js';
 import type { Rect } from '../input/touch';
-import { Ball, Bonus, Frame, Paddle, Shatter, Shot, Stone, TextSprite, Tiles, type Sprite } from '../sim/sprites';
+import { Ball, Bonus, Frame, Paddle, Shatter, Shot, Stone, StoneAttr, TextSprite, Tiles, type Sprite } from '../sim/sprites';
 import { GameState, type World } from '../sim/world';
 import { BALL_COLORS, CAPSULE_COLORS, RemasterAssets, SHATTER_COLORS, STONE_COLORS } from './remastered/assets';
 import { FONT, Hud, PANEL_X, STRIP_H, goldFill } from './remastered/hud';
@@ -508,6 +509,11 @@ export class RemasteredView {
       this.glow(cx, y + s.h - 3, s.w * 1.3, color, glue ? 0.2 + 0.06 * Math.sin(now * 0.4) : 0.12, this.floor);
       this.glow(cx, y + s.h - 4, s.w * 0.7, color, 0.1);
     } else if (s instanceof Stone) {
+      if (s.attr === StoneAttr.Bonus) {
+        // a magic gem's light from within (frames 0..10: dark, bright, dark) shines out a little
+        const pulse = Math.sqrt(Math.max(0, Math.sin((Math.PI * Math.min(s.animPos, 10)) / 10)));
+        this.glow(cx, cy, 46, STONE_COLORS[s.image] ?? 0xffffff, 0.15 * pulse);
+      }
       const t = this.flashes.get(s);
       const k = t === undefined ? 0 : 1 - (now - t) / 8;
       if (k > 0) {
