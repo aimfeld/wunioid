@@ -232,9 +232,25 @@ User (session 10): the editors didn't work in the remake (they were view only); 
   back to the editor (the HUD hint says "Esc editor").
 - [x] Deviation (needs the user's OK): Course ▸ New doesn't save the emptied high-score table over the previous
   course's (the original does, `docs/re-notes.md`).
+- [x] User (session 12): the two Remastered editors made editing hard (no test from the course editor, no way to
+  make a level and put it in a course, too much going back and forth). **Merged into one Editor** (Remastered only;
+  Classic keeps the original's two): the course is the document. `src/editorProject.ts` holds the course and
+  working copies of its levels (entries of the same file share one copy); nothing reaches the files until Save.
+  `src/ui/editorPanel.ts`, a course panel left of the picture (under it in portrait): the levels as pictures
+  (`src/render/thumbnail.ts`, the original images) in play order, a click edits one; the selected one has ▲ ▼,
+  rename (✎ or double click), duplicate and take out (the file stays); + New level / + Add level… (a list with
+  pictures) insert after it; unsaved marks (●) on the course and each changed level; Save (Ctrl+S; a new course
+  asks for its name), Play course (saves first: "Save & play course"), Test level (the red, primary button),
+  ☰ Menu. The editor's menu (Esc): New course, Open course…, Save course as…, Import…, download the level or the
+  course, Reset high scores, Main menu. The title screen has one Editor button. A course game started from the editor can go back to it (pause
+  menu, and after the high-score table). The brush and the eraser stay through tests and level changes
+  (`World.keepBrush`, Remastered only; the original resets the brush). The palette's Test and Menu buttons moved
+  to the panel. The editor survives a trip to the main menu; leaving the page with unsaved changes asks first, and
+  the auto-update waits for them. New levels are empty and black, as the original's Level ▸ New.
 - [ ] **User:** try both editors (Classic and Remastered), on desktop and on a phone (landscape is the better way
   to edit on a phone: in portrait the whole 640 × 480 picture is small).
-- [ ] Maybe: delete the player's own files; a hover mark in the Remastered palette.
+- [ ] Maybe: delete the player's own files (and restore a shipped one); a hover mark in the Remastered palette;
+  drag to reorder the course panel's levels; play a course from the selected level.
 - [ ] README with screenshots, itch.io page.
 
 ## Decisions (user)

@@ -2,9 +2,8 @@
 // backgrounds) re-laid with the re-rendered stones and tiles, on the same click rectangles as DrawMouseDown
 // (0x41aad4): stones in cells of 35 x 23 from 460, 75 (rows of 4), the attributes in a row from 460, 191,
 // backgrounds in cells of 45 x 47 from 460, 244 (rows of 3). The brush and the background are highlighted (the
-// original shows neither). The empty last stone cell holds the remake's eraser (for touch, with no right button),
-// and under the hints a Test button starts a test game (Esc in it comes back) and a Menu button opens the editor's
-// menu (as Esc).
+// original shows neither). The empty last stone cell holds the remake's eraser (for touch, with no right button).
+// Test, Save and the rest are in the course panel beside the picture (ui/editorPanel.ts).
 
 import { Container, Graphics, Rectangle, Sprite, Text, Texture, type TextStyleOptions } from 'pixi.js';
 import { levelTile } from '../../sim/files';
@@ -18,15 +17,9 @@ export const TILES = { x: 460, y: 244, w: 45, h: 47, cols: 3 };
 /** The eraser: the 16th stone cell (DrawMouseDown takes 1…13 only). */
 export const ERASER = { x: STONES.x + 3 * STONES.w, y: STONES.y + 3 * STONES.h, w: STONES.w, h: STONES.h };
 
-/** The Test and Menu buttons. */
-export const TEST = { x: 450, y: 436, w: 72, h: 22 };
-export const MENU = { x: 530, y: 436, w: 72, h: 22 };
-
 const inside = (r: { x: number; y: number; w: number; h: number }, x: number, y: number) =>
   x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h;
 export const onEraser = (x: number, y: number) => inside(ERASER, x, y);
-export const onTest = (x: number, y: number) => inside(TEST, x, y);
-export const onMenu = (x: number, y: number) => inside(MENU, x, y);
 /** In the stone or attribute rows (a click there picks a brush, or nothing). */
 export const onBrushes = (x: number, y: number) =>
   x > STONES.x && x < STONES.x + 4 * STONES.w && ((y > STONES.y && y < STONES.y + 4 * STONES.h) || (y > ATTRS.y && y < ATTRS.y + ATTRS.h));
@@ -104,19 +97,9 @@ export class EditorPalette {
     this.touchHint = new Text({ text: 'Tap  place\nTap ✕, then a stone  remove', style: HINT });
     for (const t of [this.hint, this.touchHint]) {
       t.anchor.set(0.5, 0);
-      t.position.set(526, 398);
+      t.position.set(526, 420);
       this.texts.push(t);
       this.root.addChild(t);
-    }
-    for (const [b, label, color] of [[TEST, 'Test', 0xd8452e], [MENU, 'Menu', 0x4b52b8]] as const) {
-      const pill = new Graphics()
-        .roundRect(b.x, b.y, b.w, b.h, 11).fill({ color })
-        .roundRect(b.x + 1, b.y + 1, b.w - 2, b.h / 2 - 1, 10).fill({ color: 0xffffff, alpha: 0.12 });
-      const text = new Text({ text: label, style: { ...HEAD, fontSize: 13, fill: 0xffffff, letterSpacing: 1 } });
-      text.anchor.set(0.5);
-      text.position.set(b.x + b.w / 2, b.y + b.h / 2);
-      this.texts.push(text);
-      this.root.addChild(pill, text);
     }
   }
 

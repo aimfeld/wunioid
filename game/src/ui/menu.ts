@@ -1,12 +1,11 @@
 // The Remastered menus (the remake; Classic keeps the original's menu bar and dialogs): a title screen to start a
 // course, choose one and see its high scores, switch the graphics and go fullscreen; the pause menu (Esc, ☰ on
-// touch); the high-score name entry with the table after it; and the editors' screens: the level editor's menu,
-// the course editor, and a file list to load, save, import and download levels and courses. HTML over the game,
+// touch); the high-score name entry with the table after it; and the editor's menu and a file list to open, save,
+// add, import and download levels and courses (the editor itself: ui/editorPanel.ts). HTML over the game,
 // in the HUD's look (Comic Neue, the banners' gold, the stones' glossy colours). Mouse, touch, keys (↑ ↓ move,
 // ← → change, Enter / Space choose, Esc back) and gamepad (main.ts calls nav).
 
 import type { HighScore } from '../sim/files';
-import { ADD_ONE_LEVEL, GameState, NO_NAME, type World } from '../sim/world';
 
 export interface CourseInfo {
   file: string; // e.g. default.cse
@@ -28,28 +27,28 @@ export interface MenuHost {
   editor: EditorHost;
 }
 
-/** The editors (main.ts): the level buffer and the course being played (World), and the player's files. */
+/** The editor (main.ts): a course and its levels, edited together (editorProject.ts). */
 export interface EditorHost {
-  world: World;
-  /** The level editor with the level in the buffer (Level ▸ Edit). */
-  edit(): void;
-  /** Level ▸ New. */
-  newLevel(): void;
-  /** Level ▸ Test: play the level in the buffer. */
-  test(): void;
+  /** The editor, on the course being edited (the first time: the course chosen for Play). */
+  open(): void;
+  /** A test game, or a course game started from the editor: it can go back to the editor. */
+  canReturn(): boolean;
+  /** The course being edited (null: a new one, never saved), and whether it has unsaved changes. */
+  courseName(): string | null;
+  dirty(): boolean;
+  newCourse(): void;
+  openCourse(name: string): void;
+  saveCourseAs(name: string): void;
   levels(): string[];
   courses(): string[];
-  /** The level last loaded or saved, offered as the name to save. */
-  levelName(): string;
-  /** A level file into the buffer, edited. */
-  loadLevel(name: string): void;
-  saveLevel(name: string): void;
-  openCourse(name: string): void;
-  saveCourse(name: string): void;
-  /** A game of the course being edited. */
-  playCourse(): void;
   importFiles(files: File[]): Promise<{ names: string[]; errors: string[] }>;
   download(name: string): void;
+  /** The level being edited, or the course's level list, as a file (as it is now, saved or not). */
+  downloadLevel(): void;
+  downloadCourse(): void;
+  resetHighScores(): void;
+  /** A level file's picture, for the file list. */
+  thumbnail?(name: string): HTMLCanvasElement | null;
 }
 
 /** The file screen: a level or course list to open or save to. */
@@ -59,6 +58,8 @@ interface FilesScreen {
   ext: 'lev' | 'cse';
   value: string;
   done(name: string): void;
+  /** Back without a choice. */
+  cancel?: () => void;
 }
 
 export const courseTitle = (file: string) => {
@@ -74,6 +75,7 @@ const CSS = `
 .wm-item .n { color: #9aa2e6; min-width: 1.6em; text-align: right; }
 .wm-item .x { margin-left: auto; color: #9aa2e6; font-size: 14px; padding: 0 4px; }
 .wm-item .x:hover { color: #ffd24a; }
+.wm-item canvas { flex: none; border-radius: 3px; background: #000; }
 .wm-item:hover, .wm-item:focus-visible { background: rgba(255,255,255,.08); }
 .wm-item.sel { background: linear-gradient(#5a62d0, #363c9c); color: #fff; }
 .wm-row.small .wm-btn { font-size: 16px; padding: 8px 6px; }
@@ -131,7 +133,7 @@ const CSS = `
 .wm-foot kbd { font: inherit; font-weight: bold; color: #aab0ee; }
 `;
 
-type Screen = 'title' | 'courses' | 'scores' | 'pause' | 'name' | 'done' | 'editor' | 'course' | 'files';
+type Screen = 'title' | 'courses' | 'scores' | 'pause' | 'name' | 'done' | 'editor' | 'files';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -153,9 +155,8 @@ export class Menu {
   private scoresCourse = '';
   private highlight = -1;
   private nameDone: ((name: string | null) => void) | null = null;
-  private doneActions: { again: () => void; menu: () => void } | null = null;
+  private doneActions: { again: () => void; menu: () => void; editor?: () => void } | null = null;
   private files: FilesScreen | null = null;
-  private courseSel = -1; // the course editor's selected level
   private message = { text: '', ok: false };
   private confirm = ''; // an action waiting for a second click (overwrite, reset)
 
@@ -194,13 +195,14 @@ export class Menu {
     this.go('pause');
   }
 
-  /** The level editor's menu (Esc in the editor). */
+  /** The editor's menu (Esc in the editor). */
   showEditor(): void {
     this.stack = [];
     this.go('editor');
   }
 
   close(): void {
+    this.cancelFiles();
     this.screen = null;
     this.stack = [];
     this.root.hidden = true;
@@ -217,11 +219,12 @@ export class Menu {
     });
   }
 
-  /** After the name: the table with the new entry; resolves with the choice, Play again or the title screen. */
-  showDone(): Promise<'again' | 'menu'> {
+  /** After the name: the table with the new entry; resolves with the choice, Play again, the title or the editor. */
+  showDone(): Promise<'again' | 'menu' | 'editor'> {
     this.stack = [];
     return new Promise((resolve) => {
-      this.doneActions = { again: () => resolve('again'), menu: () => resolve('menu') };
+      this.doneActions = { again: () => resolve('again'), menu: () => resolve('menu'),
+        editor: this.host.editor.canReturn() ? () => resolve('editor') : undefined };
       this.go('done');
     });
   }
@@ -242,6 +245,7 @@ export class Menu {
 
   private back(): void {
     if (this.screen === 'name' || this.screen === 'done') return;
+    if (this.screen === 'files') this.cancelFiles();
     const s = this.stack.pop();
     this.message = { text: '', ok: false };
     this.confirm = '';
@@ -249,18 +253,25 @@ export class Menu {
       this.screen = s;
       this.render(s);
     } else if (this.screen === 'pause' || this.screen === 'editor') this.host.resume();
+    else this.close();
   }
 
-  /** The course editor on the course played last; before any game, the course Play starts. */
-  private courseEditor(): void {
-    if (!this.host.editor.world.course.name) this.host.editor.openCourse(this.host.course());
-    this.courseSel = -1;
-    this.go('course');
+  private cancelFiles(): void {
+    const cancel = this.files?.cancel;
+    if (this.files) this.files.cancel = undefined;
+    cancel?.();
+  }
+
+  /** The file screen on its own (from the editor's panel): the name chosen, or null. */
+  pickFile(f: Omit<FilesScreen, 'done' | 'cancel'>): Promise<string | null> {
+    if (!this.screen) this.stack = [];
+    return new Promise((resolve) => this.chooseFile(f, resolve, () => resolve(null)));
   }
 
   /** The file screen over the levels or courses; `done` gets the name chosen, then the screen goes back. */
-  private chooseFile(f: Omit<FilesScreen, 'done'>, done: (name: string) => void): void {
-    this.files = { ...f, done: (name) => {
+  private chooseFile(f: Omit<FilesScreen, 'done' | 'cancel'>, done: (name: string) => void, cancel?: () => void): void {
+    this.files = { ...f, cancel, done: (name) => {
+      this.files!.cancel = undefined;
       this.back();
       done(name);
     } };
@@ -298,103 +309,62 @@ export class Menu {
 
   private renderEditor(box: HTMLElement): void {
     const e = this.host.editor;
-    const levelFiles = (title: string, save: boolean, done: (name: string) => void) =>
-      this.chooseFile({ title, save, ext: 'lev', value: save ? e.levelName() : '' }, done);
-    box.append(el('div', 'wm-title', 'Level editor'),
+    const name = e.courseName();
+    const dirty = e.dirty();
+    const discard = (label: string, key: string, action: () => void) => dirty
+      ? this.confirmed(label, `${label}: <span class="val">discard the changes?</span>`, key, action)
+      : this.button(label, action);
+    box.append(el('div', 'wm-title', 'Editor'),
+      el('div', 'wm-text', (name ? courseTitle(name) : 'New course') + (dirty ? ' (not saved)' : '')),
       this.button('Back to editor', () => this.host.resume(), 'primary'),
-      this.button('Test level', () => e.test()),
-      this.confirmed('New level', 'New level: <span class="val">clear this one?</span>', 'new', () => e.newLevel()),
-      this.button('Load level…', () => levelFiles('Load level', false, (n) => e.loadLevel(n))),
-      this.button('Save level as…', () => levelFiles('Save level as', true, (n) => {
-        e.saveLevel(n);
-        this.say(`Saved as ${n}`, true);
+      discard('New course', 'new', () => {
+        e.newCourse();
+        this.host.resume();
+      }),
+      discard('Open course…', 'open', () => this.chooseFile({ title: 'Open course', save: false, ext: 'cse', value: '' }, (n) => {
+        e.openCourse(n);
+        this.host.resume();
       })),
-      this.button('Course editor', () => this.courseEditor()),
-      this.msgLine(),
-      this.button('Main menu', () => this.showTitle()));
+      this.button('Save course as…', () => this.chooseFile({ title: 'Save course as', save: true, ext: 'cse', value: name ?? '' }, (n) => {
+        e.saveCourseAs(n);
+        this.render('editor');
+        this.say(`Saved as ${courseTitle(n)}`, true);
+      })));
+    const picker = this.importPicker((r) => {
+      this.render('editor');
+      this.importResult(r);
+    });
+    const files = el('div', 'wm-row small');
+    files.append(this.button('Import…', () => picker.click()), this.button('⤓ Level', () => e.downloadLevel()),
+      this.button('⤓ Course', () => e.downloadCourse()));
+    box.append(files, picker);
+    if (name) {
+      box.append(this.confirmed('Reset high scores', 'Reset high scores: <span class="val">sure?</span>', 'reset', () => {
+        e.resetHighScores();
+        this.say('High scores cleared', true);
+      }));
+    }
+    box.append(this.msgLine(), this.button('Main menu', () => this.showTitle()));
   }
 
-  private renderCourse(box: HTMLElement): void {
-    const e = this.host.editor, w = e.world, c = w.course;
-    const unsaved = c.name === NO_NAME || c.name === '';
-    box.append(el('div', 'wm-title', 'Course editor'),
-      el('div', 'wm-text', unsaved ? 'New course (not saved)' : courseTitle(c.name)));
-    const list = el('div', 'wm-list');
-    if (c.levels.length === 0) list.append(el('div', 'wm-empty', 'No levels yet: add some.'));
-    c.levels.forEach((l, i) => {
-      const b = el('button', 'wm-item' + (i === this.courseSel ? ' sel' : ''));
-      b.type = 'button';
-      b.append(el('span', 'n', `${i + 1}.`), l.replace(/\.lev$/i, ''));
-      b.addEventListener('click', () => {
-        this.courseSel = i;
-        this.render('course');
-        this.box.querySelectorAll<HTMLButtonElement>('.wm-item')[i]?.focus();
-      });
-      list.append(b);
+  /** A hidden file input for .lev and .cse files; `done` gets what importFiles found. */
+  private importPicker(done: (r: { names: string[]; errors: string[] }) => void): HTMLInputElement {
+    const picker = el('input');
+    picker.type = 'file';
+    picker.multiple = true;
+    picker.accept = '.lev,.cse';
+    picker.hidden = true;
+    picker.addEventListener('change', async () => {
+      const r = await this.host.editor.importFiles([...(picker.files ?? [])]);
+      picker.value = '';
+      done(r);
     });
-    const redraw = (focus?: string) => {
-      this.render('course');
-      if (focus) (this.box.querySelector(`[data-k="${focus}"]`) as HTMLElement | null)?.focus();
-      this.box.querySelector('.wm-item.sel')?.scrollIntoView({ block: 'nearest' });
-    };
-    const keyed = (b: HTMLButtonElement, k: string) => {
-      b.dataset.k = k;
-      return b;
-    };
-    const edit = el('div', 'wm-row small');
-    edit.append(
-      keyed(this.button('▲ Up', () => {
-        this.courseSel = w.courseMove(this.courseSel, -1);
-        redraw('up');
-      }), 'up'),
-      keyed(this.button('▼ Down', () => {
-        this.courseSel = w.courseMove(this.courseSel, 1);
-        redraw('down');
-      }), 'down'),
-      keyed(this.button('Delete', () => {
-        const err = w.courseDelete(this.courseSel);
-        if (err) this.say(err);
-        else {
-          this.courseSel = Math.min(this.courseSel, c.levels.length - 1);
-          redraw('del');
-        }
-      }), 'del'),
-      this.button('Add…', () => this.chooseFile({ title: 'Add level to course', save: false, ext: 'lev', value: '' }, (n) => {
-        w.courseAdd(n);
-        this.courseSel = c.levels.length - 1;
-        this.render('course');
-      })));
-    const file = el('div', 'wm-row small');
-    file.append(
-      this.confirmed('New', 'Sure?', 'newcourse', () => {
-        w.courseNew();
-        this.courseSel = -1;
-        this.render('course');
-      }),
-      this.button('Open…', () => this.chooseFile({ title: 'Open course', save: false, ext: 'cse', value: '' }, (n) => {
-        e.openCourse(n);
-        this.courseSel = -1;
-        this.render('course');
-      })),
-      this.button('Save as…', () => {
-        if (c.levels.length === 0) {
-          this.say(ADD_ONE_LEVEL);
-          return;
-        }
-        this.chooseFile({ title: 'Save course as', save: true, ext: 'cse', value: unsaved ? '' : c.name }, (n) => {
-          e.saveCourse(n);
-          this.render('course');
-          this.say(`Saved as ${n}`, true);
-        });
-      }));
-    box.append(list, edit, file,
-      this.confirmed('Reset high scores', 'Reset high scores: <span class="val">sure?</span>', 'reset', () => {
-        w.clearHighScores();
-        this.say('High scores cleared', true);
-      }),
-      this.msgLine(),
-      this.button(`Play <span class="val">${unsaved ? 'this course' : courseTitle(c.name)}</span>`, () => e.playCourse(), 'primary'),
-      this.button('Back', () => this.back()));
+    return picker;
+  }
+
+  private importResult(r: { names: string[]; errors: string[] }): void {
+    if (r.errors.length) this.say(r.errors.join(' · '));
+    else if (r.names.length) this.say(`Imported ${r.names.join(', ')}`, true);
   }
 
   private renderFiles(box: HTMLElement): void {
@@ -437,7 +407,9 @@ export class Menu {
     for (const n of names()) {
       const b = el('button', 'wm-item' + (input && withExt(input.value) === n ? ' sel' : ''));
       b.type = 'button';
-      b.append(n);
+      const thumb = f.ext === 'lev' ? e.thumbnail?.(n) : null;
+      if (thumb) b.append(thumb);
+      b.append(n.replace(new RegExp(`\\.${f.ext}$`, 'i'), ''));
       const dl = el('span', 'x', '⤓');
       dl.title = 'Download';
       dl.addEventListener('click', (ev) => {
@@ -455,17 +427,9 @@ export class Menu {
       });
       list.append(b);
     }
-    const picker = el('input');
-    picker.type = 'file';
-    picker.multiple = true;
-    picker.accept = '.lev,.cse';
-    picker.hidden = true;
-    picker.addEventListener('change', async () => {
-      const r = await e.importFiles([...(picker.files ?? [])]);
-      picker.value = '';
+    const picker = this.importPicker((r) => {
       this.render('files');
-      if (r.errors.length) this.say(r.errors.join(' · '));
-      else if (r.names.length) this.say(`Imported ${r.names.join(', ')}`, true);
+      this.importResult(r);
     });
     const row = el('div', 'wm-row small');
     row.append(this.button('Import file…', () => picker.click()), this.button('Back', () => this.back()));
@@ -519,9 +483,7 @@ export class Menu {
             this.highlight = -1;
             this.go('scores');
           }));
-        const editors = el('div', 'wm-row small');
-        editors.append(this.button('Level editor', () => h.editor.edit()), this.button('Course editor', () => this.courseEditor()));
-        box.append(editors, graphics());
+        box.append(this.button('Editor', () => h.editor.open()), graphics());
         const fs = fullscreen();
         if (fs) box.append(fs);
         const foot = el('div', 'wm-foot');
@@ -575,14 +537,16 @@ export class Menu {
         } else box.append(el('div', 'wm-empty', 'No scores yet. Be the first!'));
         if (s === 'done') {
           const a = this.doneActions!;
-          box.append(this.button('Play again', a.again, 'primary'), this.button('Main menu', a.menu));
+          box.append(this.button('Play again', a.again, 'primary'));
+          if (a.editor) box.append(this.button('Back to editor', a.editor));
+          box.append(this.button('Main menu', a.menu));
         } else box.append(this.button('Back', () => this.back()));
         break;
       }
       case 'pause':
         box.append(el('div', 'wm-title', 'Paused'),
           this.button('Resume', () => h.resume(), 'primary'));
-        if (h.editor.world.state === GameState.Test) box.append(this.button('Back to editor', () => h.editor.edit())); // a test game
+        if (h.editor.canReturn()) box.append(this.button('Back to editor', () => h.editor.open())); // a test game, or a game from the editor
         box.append(
           this.button(`New game <span class="val">${courseTitle(course.file)}</span>`, () => h.play()),
           this.button('Choose course', () => this.go('courses')),
@@ -595,9 +559,6 @@ export class Menu {
         break;
       case 'editor':
         this.renderEditor(box);
-        break;
-      case 'course':
-        this.renderCourse(box);
         break;
       case 'files':
         this.renderFiles(box);

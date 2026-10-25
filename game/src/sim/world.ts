@@ -80,6 +80,8 @@ export class World {
   brushAttr = false;
 
   state = GameState.None;
+  /** The remake's Remastered editor keeps the brush when it starts again (after a test, on another level). */
+  keepBrush = false;
   /** A state to start on the next tick (0x41e278); 1 at launch: a course game starts at once. */
   requested = GameState.Course;
   course = { name: '', levels: [] as string[] };
@@ -318,8 +320,10 @@ export class World {
   private startEditor(): void {
     this.clearLevel();
     new Frame(this);
-    this.brush = 1;
-    this.brushAttr = false;
+    if (!this.keepBrush) {
+      this.brush = 1;
+      this.brushAttr = false;
+    }
     this.createStones();
     this.createBackground();
     const palette = new Creator(this); // after Draw.Cursor := crDefault

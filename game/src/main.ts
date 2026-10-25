@@ -1,8 +1,10 @@
 // Boot: load the data, run the fixed-tick loop (TForm1.TimerTimer) and draw the picture: Remastered (the default,
-// with its own menus) or Classic (the original's picture, menu bar and dialogs), switchable at any time (R).
+// with its own menus and one editor for a course and its levels) or Classic (the original's picture, menu bar,
+// dialogs and two editors), switchable at any time (R).
 
 import { Sfx } from './audio/sfx';
 import { loadGameData } from './data';
+import { EditorProject } from './editorProject';
 import { toggleFullscreen } from './input/fullscreen';
 import { Gamepad } from './input/gamepad';
 import { Keyboard } from './input/keyboard';
@@ -12,13 +14,15 @@ import { createApp } from './render/app';
 import { ClassicView, loadImages, STRIP_H as CLASSIC_STRIP } from './render/classicView';
 import { RemasterAssets } from './render/remastered/assets';
 import { STRIP_H as REMASTERED_STRIP } from './render/remastered/hud';
-import { onBrushes, onEraser, onMenu, onTest } from './render/remastered/palette';
+import { onBrushes, onEraser } from './render/remastered/palette';
 import { RemasteredView } from './render/remasteredView';
+import { Thumbnails } from './render/thumbnail';
 import { loadSettings, saveSettings } from './settings';
 import { highScoreFile, writeCourse } from './sim/files';
 import { GameState, NO_NAME, World, type Input } from './sim/world';
 import { download, importFiles, loadStoredFiles, sortedNames, storeCourse, storeLevel, storeScores } from './storage';
 import { courseEditor, fileDialog, inputBox, menuBar } from './ui/dialogs';
+import { EditorPanel } from './ui/editorPanel';
 import { Menu } from './ui/menu';
 
 const TICK_MS = 22; // decision 6: the DXTimer's interval, 1000/22 ≈ 45.45 ticks per second
@@ -199,7 +203,7 @@ async function main(): Promise<void> {
   let paused = false;
   let dialog = false; // a dialog has the keyboard and the game waits
   // no game yet, or a course game on its first level with no points (also a new game after game over)
-  canReload = () => !dialog && (world.state === GameState.None ||
+  canReload = () => !dialog && !project?.dirty && (world.state === GameState.None ||
     (world.state === GameState.Course && world.levelIndex === 0 && world.score === 0));
   const setPaused = (p: boolean) => {
     paused = p;
@@ -230,9 +234,51 @@ async function main(): Promise<void> {
     setPaused(false);
   };
   const startCourse = () => {
+    fromEditor = false;
     world.loadCourse(settings.course);
     go(GameState.Course);
   };
+
+  // ---- the Remastered editor: a course and its levels (editorProject.ts), the course panel beside the picture
+
+  const thumbs = new Thumbnails(images, data.manifest);
+  let project: EditorProject | null = null;
+  let fromEditor = false; // a course game started from the editor
+  /** The course being edited; the first time, the course chosen for Play. */
+  const theProject = () => {
+    if (!project) {
+      project = new EditorProject(data.files, { level: storeLevel, course: storeCourse });
+      project.open(settings.course);
+    }
+    return project;
+  };
+  /** The level editor on the project's current level: the world edits its buffer in place. */
+  const editProject = () => {
+    fromEditor = false;
+    world.level = theProject().level;
+    go(GameState.Editor);
+  };
+  /** Save the project; a new course asks for its name first. False if cancelled. */
+  const saveProject = async (): Promise<boolean> => {
+    const p = theProject();
+    const name = p.name ?? await menu.pickFile({ title: 'Save course as', save: true, ext: 'cse', value: '' });
+    if (!name) return false;
+    p.save(name);
+    return true;
+  };
+  /** Save, then a game of the course from its first level (with its high scores). */
+  const playProject = async () => {
+    if (!(await saveProject())) return;
+    const name = theProject().name!;
+    settings.course = name;
+    saveSettings(settings);
+    world.loadCourse(name);
+    go(GameState.Course);
+    fromEditor = true;
+  };
+  window.addEventListener('beforeunload', (e) => {
+    if (project?.dirty) e.preventDefault();
+  });
   const menu: Menu = new Menu(document.body, {
     courses: () => courseNames().map((file) => ({
       file,
@@ -254,45 +300,68 @@ async function main(): Promise<void> {
       setPaused(false);
     },
     editor: {
-      world,
-      edit: () => go(GameState.Editor),
-      newLevel: () => {
-        world.newLevel();
-        go(GameState.Editor);
+      open: editProject,
+      canReturn: () => world.state === GameState.Test || fromEditor,
+      courseName: () => theProject().name,
+      dirty: () => theProject().dirty,
+      newCourse: () => {
+        theProject().newCourse();
+        panel.render();
+        editProject();
       },
-      test: () => go(GameState.Test),
+      openCourse: (name) => {
+        theProject().open(name);
+        panel.render();
+        editProject();
+      },
+      saveCourseAs: (name) => {
+        theProject().save(name);
+        panel.render();
+      },
       levels: levelNames,
       courses: courseNames,
-      levelName: () => levelName,
-      loadLevel: (name) => {
-        levelName = name;
-        world.loadLevel(name);
-        go(GameState.Editor); // the original tests a loaded level; the Remastered menu edits it
-      },
-      saveLevel: (name) => writeLevel(name),
-      openCourse: (name) => world.loadCourse(name),
-      saveCourse: (name) => {
-        saveCourse(name);
-        settings.course = name;
-        saveSettings(settings);
-      },
-      playCourse: () => {
-        if (world.course.name !== NO_NAME && data.files.courses.has(world.course.name)) {
-          settings.course = world.course.name;
-          saveSettings(settings);
-        }
-        go(GameState.Course);
-      },
       importFiles: (files) => importer(files),
       download: (name) => download(name, /\.lev$/i.test(name) ? data.files.levels.get(name)! : writeCourse(data.files.courses.get(name)!)),
+      downloadLevel: () => {
+        const p = theProject();
+        download(p.entries[p.current], new Uint8Array(p.level));
+      },
+      downloadCourse: () => {
+        const p = theProject();
+        download(p.name ?? `${NO_NAME}.cse`, writeCourse(p.entries));
+      },
+      resetHighScores: () => {
+        const name = theProject().name;
+        if (!name) return;
+        data.files.scores.set(highScoreFile(name), []);
+        storeScores(highScoreFile(name), []);
+        if (world.course.name === name) world.highScores = [];
+      },
+      thumbnail: (name) => {
+        const level = data.files.levels.get(name);
+        if (!level) return null;
+        const c = document.createElement('canvas');
+        thumbs.draw(c, level, 54);
+        return c;
+      },
     },
+  });
+  const panel = new EditorPanel(document.body, {
+    project: theProject,
+    thumbs,
+    edit: editProject,
+    pickLevel: () => menu.pickFile({ title: 'Add level', save: false, ext: 'lev', value: '' }),
+    save: saveProject,
+    play: () => void playProject(),
+    test: () => go(GameState.Test),
+    menu: () => openPause(),
   });
   document.addEventListener('fullscreenchange', () => menu.refresh());
   if (import.meta.env.DEV) Object.assign(window, { menu, startCourse, pause: (p = true) => setPaused(p) });
 
   // The level editor: DrawMouseDown, the left button places, the right one clears (no context menu over the
   // picture). Both pictures paint along a drag (the original takes clicks only). Remastered adds the palette's
-  // eraser (touch has no right button) and its Test and Menu buttons.
+  // eraser (touch has no right button).
   let erase = false;
   let painted = ''; // the cell the drag last painted
   const editorClick = (e: PointerEvent, drag: boolean) => {
@@ -309,8 +378,6 @@ async function main(): Promise<void> {
       return;
     }
     painted = cell;
-    if (r && onMenu(x, y)) return openPause();
-    if (r && onTest(x, y)) return go(GameState.Test);
     if (r && onEraser(x, y)) {
       erase = true;
       return;
@@ -326,6 +393,7 @@ async function main(): Promise<void> {
       world.editorMouseDown(x, y, true);
       world.brushAttr = attr;
     } else world.editorMouseDown(x, y, right);
+    panel.painted();
   };
   app.canvas.addEventListener('pointerdown', (e) => editorClick(e, false));
   app.canvas.addEventListener('pointermove', (e) => editorClick(e, true));
@@ -358,7 +426,8 @@ async function main(): Promise<void> {
       if (choice === 'menu') {
         world.state = GameState.None; // no new game until Play
         menu.showTitle();
-      } else menu.close();
+      } else if (choice === 'editor') editProject();
+      else menu.close();
       return;
     }
     if (p) {
@@ -463,6 +532,7 @@ async function main(): Promise<void> {
     classic.visible = !r;
     if (remastered) remastered.visible = r;
     bar.hidden = r;
+    world.keepBrush = r;
     touch.onMenu = r ? openPause : null;
     if (!r && menu.open) {
       // Classic has no menu screen: go on with the game, or start one as the original does at launch
@@ -535,12 +605,15 @@ async function main(): Promise<void> {
     touch.update(touchUsed, playing && !dialog && !menu.open, layout(strip));
     if (r) {
       r.touch = touchUsed;
-      if (world.state !== GameState.Editor) erase = false;
       r.hud.erase = erase;
     }
-    // the editor needs the palette beside the playfield (never the portrait strip), and has no touch buttons
+    // the editor needs the palette beside the playfield (never the portrait strip), and has no touch buttons;
+    // Remastered's has the course panel beside the picture
     const editing = world.state === GameState.Editor;
-    view().setArea(touchUsed && !editing ? layout(strip).game : null, touchUsed && layout(strip).portrait && !editing);
+    panel.visible = r !== null && editing;
+    panel.update();
+    if (panel.visible) view().setArea(panel.place(window.innerWidth, window.innerHeight));
+    else view().setArea(touchUsed && !editing ? layout(strip).game : null, touchUsed && layout(strip).portrait && !editing);
     if (r) r.draw(world, paused || dialog || menu.open ? 0 : acc / TICK_MS);
     else if (!paused) classic.draw(world, fps);
     requestAnimationFrame(frame);

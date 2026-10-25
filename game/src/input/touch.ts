@@ -126,7 +126,7 @@ export class TouchControls {
     // touchend stops the zoom; the game reads pointer events, but the menus and dialogs need the click it
     // synthesises, so they keep it.
     document.addEventListener('touchend', (e) => {
-      if (!(e.target instanceof Element && e.target.closest('.menubar, .backdrop, .wmenu'))) e.preventDefault();
+      if (!(e.target instanceof Element && e.target.closest('.menubar, .backdrop, .wmenu, .wep'))) e.preventDefault();
     }, { passive: false });
     window.addEventListener('blur', () => this.holds.clear());
   }
