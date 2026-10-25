@@ -1,0 +1,345 @@
+; Inferno: hard. Eaters on patrol and on the hike, Iron Bubbler speedways, cages, mazes and a needle's eye,
+; and Doh's own face at the end. Red bonus gems hide the gun, the best answer to an Eater.
+; Format and cell letters: tools/build_courses.py.
+course Inferno
+
+level Gatekeepers tile 7
+; Move Eaters patrol in front of each band of gems. Shoot them (red bonus: gun) or slip past.
+key e=Em
+vvvvvvvvvvvvv
+bbbbbbbbbbbbb
+.............
+e............
+ggggg1g1ggggg
+.............
+......e......
+ooooooooooooo
+.............
+......e......
+rrrr1r1r1rrrr
+
+level Minefield tile 4
+; Eaters are mines. Under each one a Goldie: hit it first and the mine turns to gold.
+vvvvvvvvvvvvv
+bbbEbbbbbEbbb
+bbbYbbbbbYbbb
+ggggggggggggg
+ggggggEgggggg
+ooooooYoooooo
+ooooooooooooo
+rrErrrrrrrErr
+rrYrrrrrrrYrr
+.............
+.....bEb.....
+.....4Y4.....
+
+level Speedway tile 1
+; Rumble strips of Iron Bubblers: every bounce off one speeds the ball up, and they never break.
+key u=Ui
+ggggggggggggg
+bbbbbbbbbbbbb
+.............
+.u.u.u.u.u.u.
+.............
+.............
+u.u.u.u.u.u.u
+.............
+vvvvv...vvvvv
+.............
+..u.......u..
+.............
+..ooo...ooo..
+
+level Swarm tile 9
+; A swarm of Hike gems that never sits still, round a few Granit rocks.
+key a=rh b=bh c=gh d=vh e=oh
+.............
+.a...b...c...
+.............
+...d...e...a.
+.............
+.b...G...G.c.
+.............
+...e...d...b.
+.............
+.c...a...e...
+.....G...G...
+...b...c...d.
+.............
+.e...d...a...
+
+level Chomp tile 7
+; A maze with dots to eat (an Iron frame, Granit inside). The ghosts (Hike Eaters) leave their house at the top and roam the
+; corridors. The corner dots are red bonus gems: some hold the gun.
+key h=Eh
+#############
+#1.o.oGo.o.1#
+#.....G.....#
+#.GG.GGG.GG.#
+#o.o.o.o.o.o#
+#...........#
+#GG.GG.GG.GG#
+..o.G...G.o..
+....Gh.hG....
+#GG.GGGGG.GG#
+#o.o.o.o.o.o#
+#...........#
+#.GGG.G.GGG.#
+#1.o.o.o.o.1#
+#...........#
+#G.GG...GG.G#
+
+level Hydra tile 3
+; Its necks (Doublers) give you balls, its heads (Eaters) take them. The treasure is behind the heads.
+o2o.o2o2o.o2o
+.EE..EEE..EE.
+..D...D...D..
+..D...D...D..
+...D..D..D...
+...D..D..D...
+....D.D.D....
+....ggggg....
+..ggggggggg..
+.ggg3ggg3ggg.
+.ggggggggggg.
+..ggg...ggg..
+..GG.....GG..
+
+level Prison tile 5
+; Six Granit cells, three prisoners in each. The bars are BeBacks: they come back. Some cells open at the
+; top. Two guards (Hike Eaters) walk the corridors; the Iron Killers below make the ball pierce the bars.
+key h=Eh k=Ki
+.GGGGG.GGGGG.
+.GrorG.GbgbG.
+.GCCCG.GCCCG.
+.............
+.............
+.GCCCG.GCCCG.
+.Gv1vG.GoboG.
+.GGGGG.GCCCG.
+.............
+.............
+.GGGGG.GGGGG.
+.GgrgG.GrvrG.
+.GCCCG.GCCCG.
+.............
+.....h.h.....
+...k.....k...
+
+level Haunted tile 7
+; A manor whose walls (BeBacks) won't stay down, ghosts (Hike Eaters) in its halls, candles in its windows,
+; bats (Move gems) on the roof and Granit tombstones in front.
+key h=Eh m=vm
+m.....G.....m
+.....GGG.....
+....GGGGG....
+...GGGGGGG...
+..GGGGGGGGG..
+..CCCCCCCCC..
+..Co.C.C.oC..
+..C...h...C..
+..CCC.C.CCC..
+..Co.....oC..
+..C..r.r..C..
+..CCCC.CCCC..
+.............
+.G.G.....G.G.
+.r.r.....r.r.
+
+level BlackHole tile 7
+; At the centre an Iron Eater that never breaks, ringed by gems. The outer disk turns (Move gems).
+key e=Ei m=vm n=bm
+.............
+..m.......n..
+....bbbbb....
+..bbvvvvvbb..
+.bvvooooovvb.
+.bvorrrrrovb.
+bvorr.e.rrovb
+.bvorrrrrovb.
+.bvvooooovvb.
+..bbvvvvvbb..
+....bbbbb....
+n...........m
+...U.....U...
+
+level Labyrinth tile 5
+; Three Granit walls, each with one way through, at alternating ends. The treasure is at the top.
+vvvv5vvv5vvvv
+.............
+...GGGGGGGGGG
+..o...o...o..
+.............
+.............
+GGGGGGGGGG...
+..b...b...b..
+.............
+.............
+...GGGGGGGGGG
+..g...g...g..
+.............
+.............
+r.r.r.r.r.r.r
+
+level Spider tile 6
+; Flies (gems) caught in a Granit web, and the spider (a Hike Eater) crawling through it.
+key h=Eh
+G.....G.....G
+..o...o...o..
+..G...G...G..
+.o..b.o.b..o.
+....G.G.G....
+..b.o...o.b..
+G.G.G.h.G.G.G
+..b.o...o.b..
+....G.G.G....
+.o..b.o.b..o.
+..G...G...G..
+..o...o...o..
+G.....G.....G
+
+level Comet tile 1
+; Comets (Hike Killers) streak round a planet of gems; the stars are Iron Bubblers.
+key k=Kh u=Ui
+k.....u.....k
+.............
+...bbbbbbb...
+..bbgggggbb..
+.bbggrrrggbb.
+.bggrr5rrggb.
+.bbggrrrggbb.
+..bbgggggbb..
+...bbbbbbb...
+.............
+u....k......u
+.............
+....u...u....
+
+level Asteroids tile 7
+; Granit asteroids and black Eater rocks drift through the gaps (Move); the gems stay put.
+key a=Gm e=Em
+vvvvvvvvvvvvv
+bbb5bbbbb5bbb
+.............
+a....e....a..
+.............
+ooo..ooo..ooo
+.............
+..e....a....e
+.............
+gg..ggggg..gg
+.............
+a.....a.....a
+
+level Firewall tile 3
+; Three walls of BeBacks, each with Killers in it (the middle ones are Iron and never burn out).
+; Burn through while the ball pierces.
+key k=Ki
+rrrrrrrrrrrrr
+r1rrr1r1rrr1r
+.............
+CCCCCCkCCCCCC
+.o.o.o.o.o.o.
+CCKCCCkCCCKCC
+o.o.o.o.o.o.o
+CCCCCkCkCCCCC
+.............
+ooooooooooooo
+
+level Needle tile 6
+; One way up: the needle's eye. The Iron Doubler below sends a swarm at it; thread it, and the one
+; above takes it from there.
+key d=Di u=Ui
+vvvvvvvvvvvvv
+bbbb44444bbbb
+ggggggggggggg
+.............
+.u....d....u.
+.............
+######.######
+.............
+.............
+..d..........
+.............
+.............
+.o.o.o.o.o.o.
+
+level Cerberus tile 3
+; Three heads: Granit skulls with Killer eyes, red tongues and Eater fangs. The gold is above them.
+ooooooooooooo
+.GGG.GGG.GGG.
+.KGK.KGK.KGK.
+.GGG.GGG.GGG.
+.rrr.rrr.rrr.
+.E.....E...E.
+.............
+.............
+..o.o...o.o..
+.............
+...2.....2...
+
+level Avalanche tile 9
+; Boulders (Hike Granit) roll off the top of an ice mountain, down the side and along the bottom row.
+key h=Gh
+......h......
+.....h.h.....
+.............
+.....bbb.....
+....bbbbb....
+...bbbvbbb...
+..bbbvvvbbb..
+.bbbvvvvvbbb.
+bbbb44444bbbb
+.............
+..h.......h..
+
+level Overdrive tile 1
+; An Iron Doubler in a Bubbler cage: balls by the dozen, all of them fast. Eaters wait in the corners.
+key d=Di
+vvvvvvvvvvvvv
+bbbbbbbbbbbbb
+E...........E
+ggg.......ggg
+ggg..UUU..ggg
+ggg..UdU..ggg
+ggg.......ggg
+E...........E
+ooooo...ooooo
+rrrrr...rrrrr
+
+level Gauntlet tile 5
+; Everything stands between you and the gems: Eater patrols, a BeBack wall, Granit baffles with Bubblers,
+; a Doubler and an Eater on the move.
+key e=Em m=Dm
+vvvvv5v5vvvvv
+bbbbbbbbbbbbb
+ggggggggggggg
+.............
+e.....m......
+.............
+GG.U.GG.U.GG.
+.............
+CCCC.CCC.CCCC
+.............
+..e.......e..
+.............
+1...........1
+
+level Lair tile 3
+; Doh himself: a face of Blocks with Granit brows and nose, Goldie eye-whites round Killer pupils, and
+; Eater teeth. He spits balls (an Iron Doubler in his mouth). His spawn circle the field: a Hike Doubler
+; and a Hike Killer.
+key h=Dh d=Di k=Kh
+...BBBBBBB...
+..BBBBBBBBB..
+.BBGGG.GGGBB.
+.BBYYBBBYYBB.
+.BBYKBBBKYBB.
+.BBBBBGBBBBB.
+.BBBBBGBBBBB.
+.BBBBGGGBBBB.
+.BB.E.d.E.BB.
+..BB.....BB..
+...BBBBBBB...
+.............
+h...........k

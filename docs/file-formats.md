@@ -29,6 +29,9 @@ Loaded from the game directory (`LoadCourse` 0x41c898), saved by the course edit
 `default.cse` = 4 + 24 × 51 = 1228 bytes, `Mystery.cse` = 4 + 11 × 51 = 565 bytes. When a course is loaded,
 entries whose file doesn't exist in `Levels\` are dropped from the list.
 
+**The remake's own courses** are written as text (`courses/*.txt`: one course per file, each level a 13 × 17
+grid of letters) and compiled to these formats by `tools/build_courses.py`; the letters are in its docstring.
+
 **In the remake** (`game/src/storage.ts`): the player's levels, courses and high scores are kept in
 `localStorage` in these same formats, base64, under `wunioid.level.<file>`, `wunioid.course.<file>` and
 `wunioid.scores.<file>`, over the shipped files of the same name. Imported files must have these sizes (443

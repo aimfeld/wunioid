@@ -85,6 +85,8 @@ kind 1 = GemRed, 2 GemOrange, 3 GemGreen, 4 GemBlue, 5 GemViolet. `tools/extract
   `game/public/fonts/`: Comic Neue (SIL OFL 1.1, with `OFL.txt`) for the Remastered HUD, menus and banners.
 - `tools/export_game_data.py`: the EXE's image and wave lists, the levels, courses and high scores →
   `game/public/data/` (PNG with alpha, WAV, raw files, `data.json`). `tools/export_icons.py`: the app icons.
+- `courses/*.txt` and `tools/build_courses.py` (session 11): the remake's own three courses (Postcards,
+  Contraptions, Inferno; 60 levels) as text, built into `game/public/data/` by the export.
 - `tools/screenshot.mjs`: the dev server and headless Chrome; runs steps in the page and saves the picture or
   the window (checking the game without a display). `tools/smoothness.html`: a bare motion test without the game
   (see `docs/known-issues.md`).

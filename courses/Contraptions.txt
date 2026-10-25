@@ -1,0 +1,346 @@
+; Contraptions: machines and puzzles, medium. Each level is built around how stones act on each other: Goldies
+; turning Granit into gold, Hike stones as elevators and floodwater, BeBack airlocks, an Iron Doubler factory.
+; Format and cell letters: tools/build_courses.py.
+course Contraptions
+
+level Midas tile 8
+; Everything a Goldie touches turns to gold, and gold doesn't need to be cleared.
+.............
+......5......
+vvvvvvvvvvvvv
+vvYvvvvvvvYvv
+bbbbbbbbbbbbb
+bbbbbbYbbbbbb
+ggggggggggggg
+ggYgggggggYgg
+ooooooooooooo
+ooooooYoooooo
+rrrrrrrrrrrrr
+rrYrrr1rrrYrr
+
+level Conveyor tile 1
+; Parcels (Move gems) ride conveyor belts between Iron end stops and bump into each other.
+key a=om b=bm c=gm d=rm e=vm
+.............
+#aaa.....bbb#
+.............
+#..c..#..c..#
+.............
+#ddd.....eee#
+.............
+#..a..#..b..#
+.............
+#ccc.....ddd#
+.............
+.....###.....
+
+level Elevators tile 1
+; Each shaft has an elevator (a Hike stone) going up and down. The shaft floors are BeBacks: break one to get
+; in, and it closes behind you. Elevators never leave their shafts: even a hidden floor holds them.
+key e=rh f=bh g=gh h=oh i=vh j=Bh
+.#4#.#4#.#4#.
+.#.#.#.#.#.#.
+..f.......j..
+.............
+......h......
+.B.B.B.B.B.B.
+.............
+e...........e
+.............
+.B.B.B.BiB.B.
+.............
+....g........
+.#.#.#.#.#.#.
+.#.#.#.#.#.#.
+C#C#C#C#C#C#C
+
+level Airlock tile 6
+; Two BeBack walls round the vault. Break through the outer one, then the inner one before the outer closes.
+; The Killer below makes the ball pierce BeBacks in one hit; a Doubler waits inside.
+.............
+.CCCCCCCCCCC.
+.C.........C.
+.C.CCCCCCC.C.
+.C.CvvvvvC.C.
+.C.Cv545vC.C.
+.C.Cv4D4vC.C.
+.C.Cv545vC.C.
+.C.CvvvvvC.C.
+.C.CCCCCCC.C.
+.C.........C.
+.CCCCCCCCCCC.
+.............
+.............
+......K......
+
+level Pachinko tile 6
+; Iron pins scatter the ball; the prizes sit between them.
+vvvvvvvvvvvvv
+bbb4bbbbb4bbb
+.............
+#.r.#.r.#.r.#
+.............
+o.#.o.#.o.#.o
+.............
+#.g.#.g.#.g.#
+.............
+r.#.r.#.r.#.r
+.............
+#.3.#.1.#.2.#
+
+level Pinball tile 7
+; Rollover lanes (bonus gems between Iron), Doubler bumpers, Bubbler kickers, target banks, a spinner (a Move
+; gem between two pins) and Iron slingshots.
+key m=rm
+.1..#.4.#..3.
+....#...#....
+.............
+bbbb.....bbbb
+.....D.D.....
+...U.....U...
+......D......
+gggg.....gggg
+....#.m.#....
+.............
+##.........##
+.##.......##.
+
+level Sluice tile 2
+; A reservoir of water (Hike gems) behind a Granit dam. Break a gate (Block) and the water pours out
+; through it, then keeps flowing round below.
+key w=bh
+GwwwwwwwwwwwG
+GwwwwwwwwwwwG
+GwwwwwwwwwwwG
+GwwwwwwwwwwwG
+GwwwwwwwwwwwG
+GwwwwwwwwwwwG
+GGGBGGBGGBGGG
+.............
+.............
+..D.......D..
+
+level Demolition tile 5
+; A Granit block of flats with gems for windows. The charges are Goldies: each one turns the Granit
+; round it into gold, which breaks with one hit, and the gold spreads with every hit.
+.............
+..GGGGGGGGG..
+..GrGrGrGrG..
+..GGGGGGGGG..
+..GoG5GoGoG..
+..GGGGYGGGG..
+..GgGgGgGgG..
+..GGGGGGGGG..
+..GbGbGbGbG..
+..GGGGGGGGG..
+..GvGvGvGvG..
+..GGGGGGGGG..
+..GYGGYGGYG..
+
+level Impostors tile 5
+; Three stones look nearly alike: Blocks (they count), BeBacks (they come back) and Iron Blocks (they never
+; break; listen for the clang). Clear the real ones. The red bonus may bring the gun.
+key I=Bi
+.............
+.............
+.BBCBBIBBCBB.
+.CBBBCBCBBBC.
+.BBIBB1BBIBB.
+.BCBBCBCBBCB.
+.IBBCB3BCBBI.
+
+level Turnstiles tile 6
+; The vault's floor has five gaps, and Granit doors (Move) slide past them. A second pair of doors below.
+key m=Gm
+.###########.
+.#vvvvvvvvv#.
+.#v5vvvvv5v#.
+.#vvvvvvvvv#.
+.#.#.#.#.#.#.
+.............
+m.....m......
+.............
+.............
+...m.....m...
+
+level AntFarm tile 5
+; Ants (Hike gems) run through their tunnels in soil that grows back (BeBack). Eggs (Goldies) turn the
+; soil round them to gold. Catch every ant, and the food on the surface (round the sides).
+key a=rh n=oh
+.............
+..g...g...g..
+.C.CCCCCCC.C.
+.C.CCCCCCC.C.
+.C.a...CCC.C.
+.CCCCC.CCC.C.
+.CYY...CCn...
+.CCCCCCCC.CC.
+..n.....C.CC.
+..CCCC..a..C.
+..CYYC.CCC.C.
+....a..CYYYC.
+.CCCCC.CCCCC.
+.CCCCC.CCCCC.
+
+level Factory tile 7
+; The ball factory: an Iron Doubler in an Iron housing, open only at the top. Get a ball in from above and
+; the balls come pouring out.
+key d=Di
+.............
+...##...##...
+...#..d..#...
+...#.....#...
+...#######...
+.............
+.rrrrrrrrrrr.
+.ooooooooooo.
+.ggg3ggg3ggg.
+.bbbbbbbbbbb.
+.vvvvvvvvvvv.
+.BBBBBBBBBBB.
+
+level CuckooClock tile 5
+; The cuckoo (a Hike Killer) bobs in its nest behind a Block door, above the clock face. Let it out and it
+; wanders. The pendulum is a Move Granit between two Iron stops.
+key h=Kh m=Gm
+......G......
+.....GGG.....
+....GG.GG....
+...GGGhGGG...
+..GGGGBGGGG..
+...BBBBBBB...
+...Bo.1.oB...
+...B..Y..B...
+...Bo...oB...
+...B..r..B...
+...BBBBBBB...
+....#...#....
+....#...#....
+..#...m...#..
+....C...C....
+
+level LavaLamp tile 7
+; Blobs of lava (Hike gems) drift round inside the glass.
+key a=rh c=oh
+....#####....
+....b...b....
+...b.....b...
+...b..a..b...
+..b.......b..
+..b.c...a.b..
+..b.......b..
+..b..c....b..
+...b..a..b...
+...b.....b...
+....b.c.b....
+....b...b....
+...#######...
+....#####....
+
+level Vault tile 8
+; The vault is Granit and its keyhole is the Goldie on top: get above the vault to hit it.
+; Or find the key: a violet bonus gem may drop Zup, which makes all the Granit vanish.
+5.....5.....5
+.............
+..GGGGYGGGG..
+..GoooooooG..
+..Go2o1o2oG..
+..GoooooooG..
+..Go1o2o1oG..
+..GoooooooG..
+..GGGGGGGGG..
+.............
+rrrrr...rrrrr
+.............
+bbb.......bbb
+
+level Roulette tile 3
+; Rien ne va plus: the wheel below the gems is a row of Move Doublers and Eaters. Double or nothing.
+key d=Dm e=Em
+rrrrrrrrrrrrr
+ooooooooooooo
+1o1o1o1o1o1o1
+ggggggggggggg
+bbbbbbbbbbbbb
+vvvvvvvvvvvvv
+.............
+.............
+d.d.e.d.e.d.d
+
+level Collider tile 1
+; A particle accelerator: a ring of Iron Bubblers. Every bounce inside speeds the ball up, and the Killer
+; at the core makes it pierce. What comes out is fast.
+key u=Ui
+rrrrrrrrrrrrr
+.............
+....uuuuu....
+...u.....u...
+..u..ooo..u..
+.u..o.K.o..u.
+..u..ooo..u..
+...u.....u...
+....uu.uu....
+.............
+bbbb.....bbbb
+.............
+...g.....g...
+
+level Racetrack tile 4
+; The horses (Hike gems) run clockwise round the edge of the field. A trophy with a golden rim in the middle.
+key a=rh b=bh c=oh d=vh e=gh f=Bh
+...a....b....
+.............
+..YYYYYYYYY..
+..ooooooooo..
+..ooo222ooo..
+c..ooooooo...
+....ooooo....
+.....ooo.....
+d.....o......
+......B......
+......B......
+....BBBBB....
+e..BBBBBBB...
+.............
+.............
+f............
+
+level AssemblyLine tile 1
+; Presses (Hike Killers) stamp up and down in their shafts above two conveyors and a pair of Move Doublers.
+; Break a shaft's BeBack floor to get at a press.
+key h=Kh a=om b=gm c=bm d=Dm
+.#.#.#.#.#.#.
+.#.#.#.#.#.#.
+.#h#.#h#.#h#.
+.#.#.#.#.#.#.
+.#.#.#.#.#.#.
+..C...C...C..
+.............
+#aa...bb...c#
+.............
+.c..c...c..c.
+.............
+..d.......d..
+.............
+rr.ooo.ggg.bb
+BB.BBB.BBB.BB
+
+level GrandMachine tile 7
+; Everything at once: elevators in the side shafts, the ball factory on top, a conveyor, an airlock with
+; Goldies inside, and Bubbler kickers at the bottom.
+key d=Di h=bh k=rh m=om
+.#.........#.
+.#..#...#..#.
+h#..#.d.#..#k
+.#..#####..#.
+.#.........#.
+.#ooooooooo#.
+.#.........#.
+.#m..#.#..m#.
+.#.........#.
+.#.CCCCCCC.#.
+.#.CgYgYgC.#.
+.#.CCCCCCC.#.
+C...........C
+.............
+...U.....U...

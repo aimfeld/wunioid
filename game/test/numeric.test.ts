@@ -63,7 +63,7 @@ describe('original files', () => {
     const scores = files.scores.get('defaultscr')!;
     expect(scores[0]).toEqual({ text: '5146000   ac', score: 5146000, level: 23 });
     expect(scores.length).toBe(9);
-    expect(files.levels.size).toBe(32);
+    expect(files.levels.size).toBe(32 + 60); // the original's and the remake's three courses of 20
   });
 
   it('writes what it reads', () => {

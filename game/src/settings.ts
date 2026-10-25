@@ -12,7 +12,7 @@ export interface Settings {
 }
 
 export function loadSettings(): Settings {
-  const defaults: Settings = { remastered: true, course: 'default', name: '' };
+  const defaults: Settings = { remastered: true, course: 'default.cse', name: '' };
   try {
     return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
   } catch {

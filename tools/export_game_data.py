@@ -1,7 +1,8 @@
 """Export the original's graphics, sounds, levels, courses and high scores for the browser game.
 
 Usage: uv run --with pefile --with pillow python tools/export_game_data.py original_source game/public/data
-Writes images/<name>.png (with alpha), sounds/<name>.wav, levels/*.lev, *.cse, *scr and data.json.
+Writes images/<name>.png (with alpha), sounds/<name>.wav, levels/*.lev, *.cse, *scr and data.json, then the
+remake's own courses from courses/*.txt (tools/build_courses.py).
 
 Transparency: DelphiX draws an image list item with a colour key when `Transparent` is set. The key is the item's
 TransparentColor as the 640x480x16 display surface stores it, and the pixels are compared after the image was
@@ -17,6 +18,7 @@ import sys
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(__file__))
+from build_courses import build as build_courses  # noqa: E402
 from delphi_dfm import load_forms  # noqa: E402
 from extract_assets import IMAGE_LISTS, dib_to_image  # noqa: E402
 
@@ -78,6 +80,7 @@ def main(src, out):
     json.dump(manifest, open(os.path.join(out, 'data.json'), 'w'), indent=1)
     print(f'{len(manifest["images"])} images, {len(manifest["sounds"])} sounds, {len(manifest["levels"])} levels, '
           f'{len(manifest["courses"])} courses -> {out}')
+    build_courses(os.path.join(os.path.dirname(__file__), '..', 'courses'), out, original=src)
 
 
 if __name__ == '__main__':

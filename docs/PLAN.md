@@ -275,6 +275,32 @@ User (session 10): the editors didn't work in the remake (they were view only); 
   drag to reorder the course panel's levels; play a course from the selected level.
 - [ ] README with screenshots, itch.io page.
 
+### New courses (session 11, 2026-10-25)
+User: three new courses of 20 levels each, using the stones in new combinations; the user play-tests them and
+weeds out the weak ones.
+- [x] Sources as text in `courses/*.txt` (one course per file, a 13 × 17 grid of letters per level, an idea
+  comment each); `tools/build_courses.py` → `game/public/data/levels/*.lev`, `<Course>.cse`, `data.json`, and
+  preview sheets (`--preview DIR`). It fails on a level with no counting stones or one walled in by Iron, and
+  notes levels whose stones can only be reached through BeBacks. `export_game_data.py` (`npm run data`) runs it.
+- [x] **Postcards** (pictures, gentle to medium), **Contraptions** (machines and puzzles, medium), **Inferno**
+  (hard). File names CamelCase like the originals', none reused.
+- [x] `test/autoplay.test.ts` (`AUTOPLAY=1 npx vitest run test/autoplay.test.ts --silent=false`, or
+  `AUTOPLAY=Inferno` for one course): plays every level three times with an autopilot (aims at the landing spot,
+  random paddle offset) and endless lives; reports the median time and balls lost, fails a level no run finishes.
+  All 60 finish in all runs. `test/courses.test.ts` (always): each course has its 20 levels, all with stones.
+- Learned on the way (design rules): a room closed by Iron with nothing breakable in it can hold a ball in an
+  endless bounce (soft lock): mazes and cages use Granit inside. Two staggered rows of stones one empty row apart
+  act as a wall. A 1-row (15 px) pocket or a gap the ball has to enter sideways is nearly unreachable. Nothing
+  deadly straight above the paddle's start (the ball launches up col 8). Hike stones only turn when blocked, so a
+  1-wide shaft with walls at its ends makes an elevator, and a lone Hike stone circles the field's edge clockwise.
+- [x] The settings' default course was `'default'` (no `.cse`) and only worked as the first name in sort order;
+  now `'default.cse'`, so the new courses don't take its place for a new player.
+- [ ] **User:** play-test the 60 levels and drop or change the weak ones (edit `courses/*.txt`, `npm run data`).
+  Slow for the autopilot (> 10 min): Castle, Impostors, Chomp, Labyrinth, Gauntlet. Many balls lost: Jellyfish,
+  Asteroids, Cerberus, Gauntlet.
+- [ ] Decide the order of the courses in the menu (now by name: Contraptions, default, Inferno, Mystery,
+  Postcards).
+
 ## Decisions (user)
 1. Tech stack: the Dark Planet stack (session 1).
 2. The level and course editors are in scope (session 1).
