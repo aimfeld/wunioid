@@ -6,9 +6,10 @@
 // Effects come from comparing the state of two ticks (afterTick), so a paused game spawns nothing and its particles
 // stand still: a stone that shatters bursts into splinters of its colour (instead of the shatter animation), a
 // stone that takes a hit and stays flashes, the ball throws sparks off the paddle, a collected capsule leaves a ring,
-// shots get a muzzle flash and sparks where they end. Balls, shots, capsules and magic gems glow, the first three
-// light the floor, balls leave a short trail, everything casts a shadow on the background, which is dimmed towards
-// its edges. Losing the ball shakes the picture; a new level fades in. The banners are text in the TextImageList's
+// shots get a muzzle flash and sparks where they end, a BeBack that hides crumbles into a larger cloud of dust
+// and plays Crunch (silent in the original). Balls, shots, capsules and magic gems glow, the first three light the
+// floor, balls leave a short trail, everything casts a shadow on the background, which is dimmed towards its edges.
+// Losing the ball shakes the picture; a new level fades in. The banners are text in the TextImageList's
 // colours.
 //
 // Layout: the picture is the original's 640 x 480 (the playfield in the frame and the HUD panel right of it), or in
@@ -17,7 +18,7 @@
 
 import { Application, Container, Graphics, Sprite as PixiSprite, Text, TilingSprite } from 'pixi.js';
 import type { Rect } from '../input/touch';
-import { Ball, Bonus, Frame, Paddle, Shatter, Shot, Stone, StoneAttr, TextSprite, Tiles, type Sprite } from '../sim/sprites';
+import { Ball, Bonus, Frame, Paddle, Shatter, Shot, Stone, StoneAttr, StoneKind, TextSprite, Tiles, type Sprite } from '../sim/sprites';
 import { GameState, type World } from '../sim/world';
 import { BALL_COLORS, CAPSULE_COLORS, RemasterAssets, SHATTER_COLORS, STONE_COLORS } from './remastered/assets';
 import { FONT, Hud, PANEL_X, STRIP_H, goldFill } from './remastered/hud';
@@ -32,6 +33,7 @@ const MAX_PARTICLES = 700;
 const TRAIL = 6; // ticks
 const TRAIL_STEP = 0.5; // ticks between the trail's glows
 const FADE_TICKS = 12;
+const BEBACK_DUST = 1.8; // a BeBack's crumbling: dust this much more than a hit's
 const BANNERS: Record<string, string> = {
   GameOver: 'Game Over!', DOh: "D'Oh!", Shootem: "Shoot 'em!", '1up': '1 Up', Welldone: 'Well Done!',
   Letsgo: "Let's go!", CourseDone: 'Course Done!',
@@ -241,13 +243,21 @@ export class RemasteredView {
         this.burst(sx + 15, sy + 7.5, color, near?.image === 'Granit' || near?.image === 'Block');
       }
     }
-    // stones that took a hit and stay
+    // stones that took a hit and stay flash and shed dust; a BeBack only flashes at its first hit, and crumbles
+    // (more dust, and Crunch: silent in the original) at the second, when it hides
     for (const s of w.sprites) {
-      if (!(s instanceof Stone) || !s.visible) continue;
+      if (!(s instanceof Stone)) continue;
+      if (!s.visible) {
+        if (this.hits.delete(s)) {
+          w.sound('Crunch');
+          this.dust(s.x + 15, s.y + 7.5, STONE_COLORS[s.image] ?? 0xffffff, BEBACK_DUST);
+        }
+        continue;
+      }
       const h = this.hits.get(s);
       if (h !== undefined && s.hits < h) {
         this.flashes.set(s, now);
-        this.dust(s.x + 15, s.y + 7.5, STONE_COLORS[s.image] ?? 0xffffff);
+        if (s.kind !== StoneKind.BeBack) this.dust(s.x + 15, s.y + 7.5, STONE_COLORS[s.image] ?? 0xffffff);
       }
       this.hits.set(s, s.hits);
     }
@@ -313,12 +323,13 @@ export class RemasteredView {
       size1: 70, alpha: 0.7 });
   }
 
-  private dust(x: number, y: number, color: number): void {
-    for (let i = 0; i < 5; i++) {
-      const a = Math.random() * Math.PI * 2, v = 0.5 + Math.random() * 1.5;
-      this.add({ texture: 'shard', color, layer: this.splinters, x: x + (Math.random() - 0.5) * 20, y, vx: Math.cos(a) * v,
-        vy: Math.sin(a) * v - 0.6, g: 0.18, rot: Math.random() * 6.3, vr: (Math.random() - 0.5) * 0.5, life: 18,
-        size0: 3, size1: 1, alpha: 1 });
+  /** k: how much: more, larger and faster pieces. */
+  private dust(x: number, y: number, color: number, k = 1): void {
+    for (let i = 0; i < Math.round(5 * k * k); i++) {
+      const a = Math.random() * Math.PI * 2, v = (0.5 + Math.random() * 1.5) * k;
+      this.add({ texture: 'shard', color, layer: this.splinters, x: x + (Math.random() - 0.5) * 20 * Math.sqrt(k), y,
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.6 * k, g: 0.18, rot: Math.random() * 6.3, vr: (Math.random() - 0.5) * 0.5,
+        life: 18 + 6 * (k - 1), size0: 3 * k, size1: 1, alpha: 1 });
     }
   }
 
