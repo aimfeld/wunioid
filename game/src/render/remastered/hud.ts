@@ -1,5 +1,5 @@
 // The Remastered HUD (decision 9): the original never finished its HUD (plain FPS / Lifes / Score / Level text at
-// x 500 on black). Here it is a panel beside the playfield, framed in the playfield's white marble look, with the
+// x 500 on black). Here it is a panel beside the playfield, in the playfield's white marble frame, with the
 // title, the score, the course's best score, the spare lives as small paddles, the level and course, and bars for
 // the power-ups that run out (glue, gun, piercing, mega ball). In a phone's portrait window it is a strip above
 // the playfield (decision 10): lives, score and level. No FPS.
@@ -12,7 +12,7 @@ import type { RemasterAssets } from './assets';
 export const FONT = 'Comic Neue';
 export const PANEL_X = 428;
 export const STRIP_H = 34;
-const PX = 438, PW = 192; // the panel inside the 212 px right of the playfield
+const PX = 430, PW = 192; // the panel's contents, in its opening in the frame (x 428-624, y 16-464)
 const CX = PX + PW / 2;
 const MAX_ICONS = 8;
 const TITLE_W = 168;
@@ -67,22 +67,23 @@ export class Hud {
   private lastLives = -1;
 
   constructor(private readonly assets: RemasterAssets) {
-    // the panel: dark blue glass in a marble rim
+    // the panel: dark blue glass in the playfield's marble frame (it shares the playfield's right border)
     const bg = new Graphics()
-      .roundRect(PX - 4, 6, PW + 8, 468, 14).fill({ color: 0xe8e8ee })
-      .roundRect(PX - 1, 9, PW + 2, 462, 12).fill({ color: 0x8c8e9c })
-      .roundRect(PX, 10, PW, 460, 11).fill(new FillGradient({
+      .rect(426, 14, 200, 452).fill(new FillGradient({
         type: 'linear', start: { x: 0, y: 0 }, end: { x: 0, y: 1 }, textureSpace: 'local',
         colorStops: [{ offset: 0, color: 0x262c6e }, { offset: 0.5, color: 0x161a48 }, { offset: 1, color: 0x0c0e2a }],
       }))
-      .roundRect(PX + 1, 11, PW - 2, 60, 10).fill({ color: 0xffffff, alpha: 0.05 });
+      .rect(428, 16, 196, 58).fill({ color: 0xffffff, alpha: 0.05 });
+    const rim = new Sprite(assets.panelFrame);
+    rim.scale.set(0.25);
+    rim.position.set(412, 0);
     // the title: the banners' lava text (tools/remaster_banners.py), over a soft shadow
     const title = new Container();
     for (const [dx, dy, shadow] of [[2, 3, true], [0, 0, false]] as const) {
       const t = new Sprite(assets.title);
       t.anchor.set(0.5);
       t.scale.set(TITLE_W / assets.title.width);
-      t.position.set(CX + dx, 41 + dy);
+      t.position.set(CX + dx, 44 + dy);
       if (shadow) {
         t.tint = 0x000000;
         t.alpha = 0.6;
@@ -91,8 +92,8 @@ export class Hud {
       title.addChild(t);
     }
     const sub = text('REMASTERED', { ...LABEL, fontSize: 10, letterSpacing: 4, fill: 0xc8ccff });
-    sub.position.set(CX, 70);
-    this.panel.addChild(bg, title, sub, this.game, this.hint);
+    sub.position.set(CX, 72);
+    this.panel.addChild(bg, rim, title, sub, this.game, this.hint);
     const label = (s: string, y: number) => {
       const t = text(s, LABEL);
       t.position.set(CX, y);
@@ -122,7 +123,7 @@ export class Hud {
       this.game.addChild(row);
       this.bars.push({ row, fill, color: p.color });
     });
-    this.hint.position.set(CX, 446);
+    this.hint.position.set(CX, 442);
     this.texts.push(sub, this.score, this.best, this.level, this.course, this.moreLives, this.hint);
 
     // the strip

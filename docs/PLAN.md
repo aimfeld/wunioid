@@ -143,7 +143,9 @@ Remastered is the default (user, session 6). First version in place; needs the u
   with glue, blue with the gun), light on the floor, ball trails, shadows, a dimmed and vignetted background, a
   shake on D'Oh / Game Over, a fade into each level. Banners are text (Comic Neue Bold, OFL, in
   `public/fonts/`) in the TextImageList's gold, popping in and fading out.
-- [x] HUD (decision 9) `src/render/remastered/hud.ts`: a panel right of the playfield in the frame's marble look:
+- [x] HUD (decision 9) `src/render/remastered/hud.ts`: a panel right of the playfield in the frame's marble look
+  (user, session 9: the same white marble relief as the playfield; the frame now goes on round the panel, closed at
+  the bottom, the playfield's right border shared as the divider: `remaster/panel-frame.webp`, x 412–640):
   title, score (counting up), the course's best, lives as small paddles, level n / count and course, bars for the
   power-ups that run out (glue 800, gun 500, piercing 400, mega ball 300 ticks), key hint. Portrait strip: lives,
   score, level, thin power-up bars.

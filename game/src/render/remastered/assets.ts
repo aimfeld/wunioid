@@ -102,15 +102,18 @@ export class RemasterAssets {
   readonly ring = ring(128);
   readonly vignette = vignette();
 
-  /** frame: the playfield frame (4x); title: 'Wunioid' in the banners' lava look, trimmed (tools/remaster_banners.py). */
-  private constructor(private readonly sprites: Map<string, Frames>, readonly frame: Texture, readonly title: Texture) {}
+  /** frame: the playfield frame (4x); panelFrame: its continuation round the HUD panel, from x 412 (4x); title:
+   * 'Wunioid' in the banners' lava look, trimmed (tools/remaster_banners.py). */
+  private constructor(private readonly sprites: Map<string, Frames>, readonly frame: Texture,
+    readonly panelFrame: Texture, readonly title: Texture) {}
 
   /** The re-rendered sprites, and the originals (smoothly scaled) for the images without one. */
   static async load(base: string, images: Images, manifest: Manifest): Promise<RemasterAssets> {
     const index: Index = await (await fetch(base + 'remaster/sprites.json')).json();
-    const [pages, frameImg, titleImg] = await Promise.all([
+    const [pages, frameImg, panelFrameImg, titleImg] = await Promise.all([
       Promise.all(index.pages.map((p) => image(base + 'remaster/' + p))),
       image(base + 'remaster/frame.webp'),
+      image(base + 'remaster/panel-frame.webp'),
       image(base + 'remaster/title.webp'),
     ]);
     const sources = pages.map(source);
@@ -143,7 +146,8 @@ export class RemasterAssets {
       }
       sprites.set(name, { scale: 1, textures });
     }
-    return new RemasterAssets(sprites, new Texture({ source: source(frameImg) }), new Texture({ source: source(titleImg) }));
+    return new RemasterAssets(sprites, new Texture({ source: source(frameImg) }), new Texture({ source: source(panelFrameImg) }),
+      new Texture({ source: source(titleImg) }));
   }
 
   get(name: string): Frames | undefined {

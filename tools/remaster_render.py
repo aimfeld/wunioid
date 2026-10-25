@@ -11,7 +11,8 @@ cycle, the Killer's colour cycle, Bubbler's water, the Eater's and Doubler's clo
 upscaled (Lanczos, wrapped so they tile without seams). The banners come from tools/remaster_banners.py. Not drawn:
 the shatter animations (particles in the remaster), the editor's attribute labels and palette (Phase 4).
 
-Writes <out>/sprites-<p>.webp (atlas pages), <out>/frame.webp (the playfield frame), <out>/title.webp (the title,
+Writes <out>/sprites-<p>.webp (atlas pages), <out>/frame.webp (the playfield frame), <out>/panel-frame.webp (its
+continuation round the HUD panel, x 412-640), <out>/title.webp (the title,
 trimmed: remaster_banners.title()) and <out>/sprites.json:
   {"scale": 4, "scales": {name: 3}, "pages": [file...], "frames": {name: [[page, x, y, w, h], ...]}}
   (4x px, w, h = 4 x the original; "scales": the sprites drawn at another scale, the banners)
@@ -602,14 +603,23 @@ def tile(data, n):
     return up.crop((w * S, h * S, 2 * w * S, 2 * h * S)).convert('RGBA')
 
 
-def frame_border(w=428, h=480, border=16):
-    """The playfield frame: white marble, a rounded outer edge, a step down to the black inner edge."""
+def frame_border(w=428, h=480, border=16, panel=False):
+    """The playfield frame: white marble, a rounded outer edge, a step down to the black inner edge. With `panel`,
+    the whole 640 x 480 picture: the frame goes on round the HUD panel right of the playfield, closed at the bottom,
+    the playfield's right border shared with the panel (the HUD draws the part right of the playfield)."""
+    if panel:
+        w = 640
     xs = (np.arange(w * S) + 0.5) / S
     ys = (np.arange(h * S) + 0.5) / S
     X, Y = np.meshgrid(xs, ys)
-    # distance from the outer edge (px), inside the frame, and from the inner edge
-    d_out = np.minimum(np.minimum(X, w - X), Y)  # no bottom edge: the frame opens at the bottom
-    d_in = border - d_out
+    # the openings (x0, x1, y0, y1) and the distance from the outer edge (px)
+    holes = [(border, 428 - border, border, np.inf)]  # no bottom edge: the frame opens at the bottom
+    d_out = np.minimum(np.minimum(X, w - X), Y)
+    if panel:
+        holes.append((428, w - border, border, h - border))
+        d_out = np.minimum(d_out, h - Y)
+    # the distance from the inner edge, inside the frame
+    d_in = np.min([np.maximum(np.maximum(x0 - X, X - x1), np.maximum(y0 - Y, Y - y1)) for x0, x1, y0, y1 in holes], 0)
     on = d_in > -0.5
     z = np.where(d_out < 2.2, np.sqrt(np.clip(1 - ((2.2 - d_out) / 2.2) ** 2, 0, 1)) * 2.2, 2.2)
     z = np.where(d_in < 4.2, z - (1 - np.clip(d_in / 4.2, 0, 1)) ** 1.6 * 2.6 * (d_in > 0), z)
@@ -688,6 +698,13 @@ def pack(groups):
     return pages, index
 
 
+def frames(out):
+    """frame.webp: the playfield frame (the phone's portrait picture); panel-frame.webp: the panel's, from x 412."""
+    frame_border().save(os.path.join(out, 'frame.webp'), quality=QUALITY, method=6)
+    frame_border(panel=True).crop((412 * S, 0, 640 * S, 480 * S)).save(os.path.join(out, 'panel-frame.webp'),
+                                                                   quality=QUALITY, method=6)
+
+
 def main():
     data, out = sys.argv[1], sys.argv[2]
     only = sys.argv[3].split(',') if len(sys.argv) > 3 else None
@@ -696,7 +713,7 @@ def main():
         groups = {k: v for k, v in sprites(data).items() if k in only}
         rows = [im for ims in groups.values() for im in ims]
         if 'frame' in only:
-            frame_border().crop((0, 0, 400, 400)).save(os.path.join(out, 'preview-frame.png'))
+            frame_border(panel=True).save(os.path.join(out, 'preview-frame.png'))
             if not rows:
                 return
         cols = max(1, 1600 // (max(im.width for im in rows) + 8))
@@ -715,13 +732,13 @@ def main():
         f = 'sprites-%d.webp' % p
         page.save(os.path.join(out, f), quality=QUALITY, method=6, exact=False)
         files.append(f)
-    frame_border().save(os.path.join(out, 'frame.webp'), quality=QUALITY, method=6)
+    frames(out)
     title = remaster_banners.title()
     title.crop(title.getbbox()).save(os.path.join(out, 'title.webp'), quality=QUALITY, method=6, exact=False)
     scales = {name: remaster_banners.S for name in remaster_banners.TEXTS}
     json.dump({'scale': S, 'scales': scales, 'pages': files, 'frames': index}, open(os.path.join(out, 'sprites.json'), 'w'),
               separators=(',', ':'))
-    total = sum(os.path.getsize(os.path.join(out, f)) for f in files + ['frame.webp', 'title.webp'])
+    total = sum(os.path.getsize(os.path.join(out, f)) for f in files + ['frame.webp', 'panel-frame.webp', 'title.webp'])
     print('%d pages, %d sprites, %.1f MB' % (len(pages), sum(len(v) for v in index.values()), total / 1e6))
 
 
