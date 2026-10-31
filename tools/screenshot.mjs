@@ -7,7 +7,7 @@
 // Example: node tools/screenshot.mjs /tmp/shots "" "for (let i = 0; i < 40; i++) world.tick({left: 0, right: 0, up: 1, fire: 0})"
 // Environment: SIZE=390x844 sets the window (default 1280x1000), TOUCH=1 emulates a phone (coarse pointer, touch
 // buttons), MODE=classic or MODE=remastered picks the picture (default: the saved setting, Remastered). Remastered
-// has no picture of its own: its steps always save the window. `menu` and `startCourse()` are globals too.
+// has no picture of its own: its steps always save the window. `menu`, `startCourse()` and `editProject()` are globals too.
 
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';

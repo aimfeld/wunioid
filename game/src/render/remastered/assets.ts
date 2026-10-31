@@ -4,6 +4,7 @@
 
 import { ImageSource, Rectangle, Texture } from 'pixi.js';
 import type { Manifest } from '../../data';
+import { ATTR_IMAGES } from '../../sim/sprites';
 import type { Images } from '../classicView';
 
 export const SCALE = 4; // texture px per original px
@@ -95,7 +96,68 @@ function vignette(): Texture {
   return new Texture({ source: source(c) });
 }
 
+/** The attribute labels' colours (Bonus, Move, Hike, Iron). */
+export const ATTR_COLORS = ['', '#ffd24a', '#5ad2ff', '#7fe07a', '#c6cede'];
+const ATTR_NAMES = ['', 'Bonus', 'Move', 'Hike', 'Iron'];
+
+/**
+ * An attribute label (the remake's; the original's are white pills with black text): a dark glass pill with a rim
+ * and the name in the attribute's colour, `pw` x `ph` original px centred in a `w` x `h` image. Needs the font.
+ */
+function attrLabel(attr: number, w: number, h: number, pw: number, ph: number, font: number): Texture {
+  const c = document.createElement('canvas');
+  c.width = w * SCALE;
+  c.height = h * SCALE;
+  const ctx = c.getContext('2d')!;
+  ctx.scale(SCALE, SCALE);
+  const x = (w - pw) / 2, y = (h - ph) / 2, r = ph / 2, color = ATTR_COLORS[attr];
+  const pill = (inset: number) => {
+    ctx.beginPath();
+    ctx.roundRect(x + inset, y + inset, pw - 2 * inset, ph - 2 * inset, r - inset);
+  };
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 1.5;
+  ctx.shadowOffsetY = 0.5;
+  pill(0);
+  const g = ctx.createLinearGradient(0, y, 0, y + ph);
+  g.addColorStop(0, 'rgba(48,44,92,0.92)');
+  g.addColorStop(1, 'rgba(10,8,30,0.92)');
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  pill(0.4);
+  ctx.lineWidth = 0.8;
+  ctx.strokeStyle = color;
+  ctx.stroke();
+  // a gloss on the upper half
+  ctx.save();
+  pill(0.8);
+  ctx.clip();
+  const gl = ctx.createLinearGradient(0, y, 0, y + ph / 2);
+  gl.addColorStop(0, 'rgba(255,255,255,0.22)');
+  gl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gl;
+  ctx.fillRect(x, y, pw, ph / 2);
+  ctx.restore();
+  ctx.font = `bold ${font}px 'Comic Neue'`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 1.2;
+  ctx.fillText(ATTR_NAMES[attr], w / 2, h / 2 + font * 0.06);
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillText(ATTR_NAMES[attr], w / 2, h / 2 + font * 0.06);
+  return new Texture({ source: source(c) });
+}
+
+/** The palette's attribute pills (in its 35 x 23 cells). */
+export const ATTR_PILL = { w: 31, h: 15 };
+
 export class RemasterAssets {
+  /** The palette's attribute pills, 1…4 (labels()). */
+  readonly attrPills: Texture[] = [];
   readonly glow = radial(128, 0);
   readonly spark = radial(32, 0.6);
   readonly shard = shard();
@@ -148,6 +210,15 @@ export class RemasterAssets {
     }
     return new RemasterAssets(sprites, new Texture({ source: source(frameImg) }), new Texture({ source: source(panelFrameImg) }),
       new Texture({ source: source(titleImg) }));
+  }
+
+  /** The attribute labels, on the stones (ABonus…AIron, 30 x 15 like the originals) and in the palette. Once the
+   * font is loaded. */
+  labels(): void {
+    for (let a = 1; a <= 4; a++) {
+      this.sprites.set(ATTR_IMAGES[a], { scale: 1 / SCALE, textures: [attrLabel(a, 30, 15, 24, 9, 7)] });
+      this.attrPills[a] = attrLabel(a, 35, 23, ATTR_PILL.w, ATTR_PILL.h, 10);
+    }
   }
 
   get(name: string): Frames | undefined {

@@ -148,6 +148,7 @@ export class RemasteredView {
     const font = new FontFace(FONT, `url(${base}fonts/ComicNeue-Bold.ttf)`, { weight: 'bold' });
     document.fonts.add(font);
     await Promise.all([font.load().catch(() => undefined), assets]);
+    (await assets).labels();
     return new RemasteredView(app, await assets);
   }
 

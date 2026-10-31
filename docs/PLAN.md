@@ -124,7 +124,7 @@ Remastered is the default (user, session 6). First version in place; needs the u
   in white marble; the 9 background tiles are upscaled (Lanczos, wrapped, sharpened). Out: two 2048² WebP atlas
   pages, `frame.webp`, `sprites.json` in `game/public/remaster/` (committed like `data/`). Not re-rendered:
   the shatter animations (particles instead), the editor's labels and palette (the originals, smoothly scaled,
-  until Phase 4).
+  until Phase 4; both redone there).
 - [x] Banners re-rendered like the originals (user, session 8: closer to the original's lava text and wave):
   `tools/remaster_banners.py`, after Dark Planet's `tools/menu_items.py`: Comic Neue Bold (letter-spaced like
   Comic Sans), flat faces extruded 6 px deep (user: flat letters, deeper relief), soft lava blobs in the originals'
@@ -285,6 +285,10 @@ User (session 10): the editors didn't work in the remake (they were view only); 
   (`World.keepBrush`, Remastered only; the original resets the brush). The palette's Test and Menu buttons moved
   to the panel. The editor survives a trip to the main menu; leaving the page with unsaved changes asks first, and
   the auto-update waits for them. New levels are empty and black, as the original's Level ▸ New.
+- [x] User (session 16): the attribute labels looked ugly (the originals: white pills, black text, smoothly
+  scaled). Remastered draws its own (`attrLabel` in `render/remastered/assets.ts`, after the font loads): a dark
+  glass pill with a rim and the name in the attribute's colour (Bonus gold, Move cyan, Hike green, Iron steel),
+  24 × 9 on the stones (so the stone shows round it) and 31 × 15 in the palette, whose brush mark hugs the pill.
 - [ ] **User:** try both editors (Classic and Remastered), on desktop and on a phone (landscape is the better way
   to edit on a phone: in portrait the whole 640 × 480 picture is small).
 - [ ] Maybe: delete the player's own files (and restore a shipped one); a hover mark in the Remastered palette;

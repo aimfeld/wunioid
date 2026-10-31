@@ -1,15 +1,15 @@
 // The level editor's palette in the Remastered HUD panel: the original's `Creator` image (stones, attributes,
-// backgrounds) re-laid with the re-rendered stones and tiles, on the same click rectangles as DrawMouseDown
+// backgrounds) re-laid with the re-rendered stones, tiles and attribute pills, on the same click rectangles as DrawMouseDown
 // (0x41aad4): stones in cells of 35 x 23 from 460, 75 (rows of 4), the attributes in a row from 460, 191,
 // backgrounds in cells of 45 x 47 from 460, 244 (rows of 3). The brush and the background are highlighted (the
 // original shows neither). The empty last stone cell holds the remake's eraser (for touch, with no right button).
 // Test, Save and the rest are in the course panel beside the picture (ui/editorPanel.ts).
 
-import { Container, Graphics, Rectangle, Sprite, Text, Texture, type TextStyleOptions } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, type TextStyleOptions } from 'pixi.js';
 import { levelTile } from '../../sim/files';
 import { STONE_IMAGES } from '../../sim/sprites';
 import type { World } from '../../sim/world';
-import type { RemasterAssets } from './assets';
+import { ATTR_PILL, type RemasterAssets } from './assets';
 
 export const STONES = { x: 460, y: 75, w: 35, h: 23, cols: 4 };
 export const ATTRS = { x: 460, y: 191, w: 35, h: 23 };
@@ -65,12 +65,11 @@ export class EditorPalette {
       s.position.set(x + 2.5, y + 4);
       this.root.addChild(s);
     }
-    // the attributes as the original palette shows them (white; the labels on the stones are black)
-    const creator = assets.get('Creator')?.textures[0];
-    if (creator) {
-      const s = new Sprite(new Texture({ source: creator.source,
-        frame: new Rectangle(creator.frame.x + ATTRS.x - 460, creator.frame.y + ATTRS.y - 50, 4 * ATTRS.w, ATTRS.h) }));
-      s.position.set(ATTRS.x, ATTRS.y);
+    // the attributes: the remake's pills (the original's palette has white labels; ATTR_PILL in the 35 x 23 cells)
+    for (let a = 1; a <= 4; a++) {
+      const s = new Sprite(assets.attrPills[a]);
+      s.setSize(ATTRS.w, ATTRS.h);
+      s.position.set(ATTRS.x + (a - 1) * ATTRS.w, ATTRS.y);
       this.root.addChild(s);
     }
     for (let t = 1; t <= 9; t++) {
@@ -117,7 +116,11 @@ export class EditorPalette {
       r = { x: STONES.x + ((w.brush - 1) % STONES.cols) * STONES.w, y: STONES.y + Math.trunc((w.brush - 1) / STONES.cols) * STONES.h,
         w: STONES.w, h: STONES.h };
     }
-    this.mark.roundRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1, 5).stroke({ color: GOLD, width: 2 });
+    if (w.brushAttr && !erase) {
+      // round the pill, 2 px out
+      const pw = ATTR_PILL.w + 4, ph = ATTR_PILL.h + 4;
+      this.mark.roundRect(r.x + (r.w - pw) / 2, r.y + (r.h - ph) / 2, pw, ph, ph / 2).stroke({ color: GOLD, width: 1.5 });
+    } else this.mark.roundRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1, 5).stroke({ color: GOLD, width: 2 });
     this.tileMark.clear();
     const t = levelTile(w.level);
     if (t >= 1 && t <= 9) {

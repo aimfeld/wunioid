@@ -380,7 +380,7 @@ async function main(): Promise<void> {
     menu: () => openPause(),
   });
   document.addEventListener('fullscreenchange', () => menu.refresh());
-  if (import.meta.env.DEV) Object.assign(window, { menu, startCourse, pause: (p = true) => setPaused(p) });
+  if (import.meta.env.DEV) Object.assign(window, { menu, startCourse, editProject, pause: (p = true) => setPaused(p) });
 
   // The level editor: DrawMouseDown, the left button places, the right one clears (no context menu over the
   // picture). Both pictures paint along a drag (the original takes clicks only). Remastered adds the palette's
