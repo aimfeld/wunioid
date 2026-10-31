@@ -13,7 +13,8 @@ the shatter animations (particles in the remaster), the editor's attribute label
 
 Writes <out>/sprites-<p>.webp (atlas pages), <out>/frame.webp (the playfield frame), <out>/panel-frame.webp (its
 continuation round the HUD panel, x 412-640), <out>/title.webp (the title,
-trimmed: remaster_banners.title()) and <out>/sprites.json:
+trimmed: remaster_banners.title()), <out>/title-wave.webp (the title screen's waving title, its frames stacked:
+remaster_banners.title_wave()) and <out>/sprites.json:
   {"scale": 4, "scales": {name: 3}, "pages": [file...], "frames": {name: [[page, x, y, w, h], ...]}}
   (4x px, w, h = 4 x the original; "scales": the sprites drawn at another scale, the banners)
 
@@ -735,10 +736,12 @@ def main():
     frames(out)
     title = remaster_banners.title()
     title.crop(title.getbbox()).save(os.path.join(out, 'title.webp'), quality=QUALITY, method=6, exact=False)
+    # the title screen's waving title: 24 large frames, so a lower quality (0.4 MB; the lava hides it)
+    remaster_banners.title_wave().save(os.path.join(out, 'title-wave.webp'), quality=80, method=6, exact=False)
     scales = {name: remaster_banners.S for name in remaster_banners.TEXTS}
     json.dump({'scale': S, 'scales': scales, 'pages': files, 'frames': index}, open(os.path.join(out, 'sprites.json'), 'w'),
               separators=(',', ':'))
-    total = sum(os.path.getsize(os.path.join(out, f)) for f in files + ['frame.webp', 'panel-frame.webp', 'title.webp'])
+    total = sum(os.path.getsize(os.path.join(out, f)) for f in files + ['frame.webp', 'panel-frame.webp', 'title.webp', 'title-wave.webp'])
     print('%d pages, %d sprites, %.1f MB' % (len(pages), sum(len(v) for v in index.values()), total / 1e6))
 
 

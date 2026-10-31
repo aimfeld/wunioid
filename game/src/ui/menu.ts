@@ -71,6 +71,10 @@ export const courseTitle = (file: string) => {
   return n.charAt(0).toUpperCase() + n.slice(1);
 };
 
+/** remaster/title-wave.webp: its frames (stacked), one frame's size in px, and the loop's length in seconds, the
+ *  banners' wave: 8 frames at 0.4 frames per 22 ms tick (remasteredView.ts, ANIM_PER_TICK). */
+const TITLE_WAVE = { frames: 24, w: 1008, h: 186, loop: 0.44 };
+
 const CSS = `
 .wm-list { display: flex; flex-direction: column; gap: 4px; max-height: min(42vh, 360px); overflow-y: auto; padding: 4px;
   background: rgba(0,0,0,.25); border-radius: 12px; }
@@ -93,8 +97,12 @@ const CSS = `
 .wmenu[hidden] { display: none; }
 .wm-box { width: min(440px, calc(100vw - 32px)); padding: 16px 0 24px; display: flex; flex-direction: column;
   align-items: stretch; gap: 10px; margin: auto; }
-.wm-logo { display: block; width: min(330px, 78vw); margin: 6px auto 8px; user-select: none; pointer-events: none;
-  filter: drop-shadow(0 6px 8px rgba(0,0,0,.65)); }
+.wm-logo { display: block; width: min(330px, 78vw); aspect-ratio: ${TITLE_WAVE.w} / ${TITLE_WAVE.h}; margin: 6px auto 8px;
+  overflow: hidden; user-select: none; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,.65)); }
+.wm-logo img { display: block; width: 100%;
+  animation: wm-wave ${TITLE_WAVE.loop}s steps(${TITLE_WAVE.frames}) infinite; }
+@keyframes wm-wave { to { transform: translateY(-100%); } }
+@media (prefers-reduced-motion: reduce) { .wm-logo img { animation: none; } }
 .wm-sub { text-align: center; letter-spacing: .45em; font-size: 13px; color: #c8ccff; margin: -4px 0 6px; }
 .wm-gems { display: flex; justify-content: center; gap: 6px; margin: 4px 0 14px; }
 .wm-gem { width: 34px; height: 17px; clip-path: polygon(13% 0, 87% 0, 100% 30%, 100% 70%, 87% 100%, 13% 100%, 0 70%, 0 30%);
@@ -109,7 +117,14 @@ const CSS = `
   justify-content: center; gap: 10px; -webkit-tap-highlight-color: transparent; }
 .wm-btn.primary { background: linear-gradient(#ff6a50, #c8261a); font-size: 25px; padding: 14px 18px; }
 .wm-btn:focus-visible, .wm-btn.focus, .wm-btn:hover { box-shadow: inset 0 2px 0 rgba(255,255,255,.28),
-  inset 0 -3px 0 rgba(0,0,0,.3), 0 0 0 3px #ffd24a, 0 0 22px rgba(255,200,60,.55); }
+  inset 0 -3px 0 rgba(0,0,0,.3), 0 0 0 3px #ffd24a, 0 0 22px rgba(255,200,60,.55);
+  animation: wm-glow 1.1s ease-in-out infinite alternate; }
+@keyframes wm-glow {
+  from { box-shadow: inset 0 2px 0 rgba(255,255,255,.28), inset 0 -3px 0 rgba(0,0,0,.3), 0 0 0 3px #ffd24a,
+    0 0 8px rgba(255,200,60,.25); }
+  to { box-shadow: inset 0 2px 0 rgba(255,255,255,.28), inset 0 -3px 0 rgba(0,0,0,.3), 0 0 0 3px #ffd24a,
+    0 0 34px 7px rgba(255,200,60,.85); } }
+@media (prefers-reduced-motion: reduce) { .wm-btn { animation: none !important; } }
 .wm-btn:active { transform: translateY(2px); }
 .wm-btn .val { color: #ffd24a; }
 .wm-btn .arrow { opacity: .6; font-size: 16px; }
@@ -478,10 +493,13 @@ export class Menu {
     const fullscreen = () => h.fullscreen ? this.button(h.isFullscreen() ? 'Leave fullscreen' : 'Fullscreen', () => h.fullscreen!()) : null;
     switch (s) {
       case 'title': {
-        const logo = document.createElement('img');
-        logo.className = 'wm-logo';
-        logo.src = import.meta.env.BASE_URL + 'remaster/title.webp'; // the banners' lava text (tools/remaster_banners.py)
-        logo.alt = 'Wunioid';
+        // the banners' lava text with their wave (tools/remaster_banners.py title_wave): the frames stacked, shown
+        // one at a time through the box
+        const logo = el('div', 'wm-logo');
+        const img = document.createElement('img');
+        img.src = import.meta.env.BASE_URL + 'remaster/title-wave.webp';
+        img.alt = 'Wunioid';
+        logo.append(img);
         const gems = el('div', 'wm-gems');
         for (const c of ['#f0302a', '#ffb43c', '#4cc84a', '#5a56e6', '#ee3ae6']) {
           const g = el('div', 'wm-gem');

@@ -135,6 +135,10 @@ Remastered is the default (user, session 6). First version in place; needs the u
 - [x] The title "Wunioid" in the same look (user, session 8: "let's see how that looks"): a still (no wave) from
   `remaster_banners.title()`, `remaster/title.webp` (trimmed, 40 KB), in the HUD panel (a sprite over a soft
   shadow, instead of the gold Pixi text) and on the title screen (an `<img>`, instead of the CSS gradient text).
+- [x] Title screen (user, 2026-10-31): the title waves like the banners (`remaster_banners.title_wave()`,
+  `remaster/title-wave.webp`: 24 frames stacked, 4x, 0.4 MB; CSS `steps()` through a box, one loop in 0.44 s,
+  the banners' speed; the HUD keeps the still), and the highlighted button's yellow glow pulses (1.1 s each way).
+  Both stop under `prefers-reduced-motion`.
 - [x] `src/render/remasteredView.ts`: the same 640 × 480 layout (portrait: the playfield under a 34 px strip),
   scaled to fill the area (not integer). Positions interpolated between the last two ticks (`beforeTick`; a jump
   over 48 px snaps). Effects from comparing ticks (`afterTick`, render only): splinters in the stone's colour where

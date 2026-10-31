@@ -232,6 +232,32 @@ def title():
     return Banner('Wunioid', (w + 14, h + 14), (7, 7, w + 7, h + 7), 7, TITLE_SCALE).render(None)
 
 
+TITLE_WAVE_SCALE = 4  # the title screen's waving title: up to about 330 CSS px wide, so 4x is enough
+TITLE_WAVE_FRAMES = 24  # it stays on the screen, large: more frames than the banners' FRAMES
+
+
+def _title_frame(t):
+    img = glyph_image('Wunioid')
+    h = 46
+    w = round(h * img.width / img.height)
+    return Banner('Wunioid', (w + 14, h + 14), (7, 7, w + 7, h + 7), 7, TITLE_WAVE_SCALE).render(t)
+
+
+def title_wave():
+    """The title with the banners' wave running down it, for the title screen: TITLE_WAVE_FRAMES frames of one loop,
+    stacked top to bottom, all cropped to the box that holds every frame (so they line up)."""
+    from multiprocessing import Pool
+    with Pool() as pool:
+        ims = pool.map(_title_frame, [f / TITLE_WAVE_FRAMES for f in range(TITLE_WAVE_FRAMES)])
+    boxes = np.array([im.getbbox() for im in ims])
+    box = (*boxes[:, :2].min(0), *boxes[:, 2:].max(0))
+    ims = [im.crop(tuple(int(v) for v in box)) for im in ims]
+    sheet = Image.new('RGBA', (ims[0].width, ims[0].height * len(ims)))
+    for k, im in enumerate(ims):
+        sheet.paste(im, (0, k * im.height))
+    return sheet
+
+
 def compare(data, out, names):
     """Each banner: the originals' 8 frames (4x, nearest) next to every other frame of this renderer, on dark blue."""
     from multiprocessing import Pool
