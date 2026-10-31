@@ -2,8 +2,10 @@
 
 Usage: python tools/build_courses.py courses game/public/data [--preview DIR] [--original original_source]
   (--preview needs pillow: uv run --with pillow python tools/build_courses.py ...)
-Writes levels/<name>.lev and <Course>.cse below the data directory and adds them to data.json. Called by
-export_game_data.py too, so a fresh export keeps them.
+Writes levels/<name>.lev and <Course>.cse below the data directory and adds them to data.json. With --original,
+also removes the .lev and .cse files (and their data.json entries) of levels and courses that are gone from the
+sources. Called by export_game_data.py too, so a fresh export keeps them. In `npm run dev`, the editor's Save
+writes the sources (tools/save_course.py).
 
 Source format (one course per file, levels in course order):
     ; a comment (anywhere on a line)
@@ -11,6 +13,8 @@ Source format (one course per file, levels in course order):
     level Welcome tile 3
     key m=rm h=Yh          (optional: extra single-character cells for this level)
     .............          (17 rows of 13 cells; missing rows at the bottom are empty)
+    use Hi                 (a level defined in another course's source, or one of the original levels)
+Names may have spaces; `tile N` at the end of a level line is the background (0, black, if left out).
 
 Cells, one character each (a key line adds more, as <char>=<kind><attribute>):
     .  empty
@@ -46,7 +50,16 @@ def counts(kind, attr):
 
 
 def parse(path):
-    """A course source → (course name, [(level name, tile, grid)]), grid[row][col] = (kind, attr)."""
+    """A course source → (course name, [(level name, tile, grid)]), grid[row][col] = (kind, attr); tile and grid
+    are None for a `use` line."""
+    course, levels = parse_lines(open(path, encoding='utf-8'), path)
+    if not course:
+        raise SystemExit(f'{path}: no course line')
+    return course, levels
+
+
+def parse_lines(lines, path):
+    """parse() on the lines of a source, or of a part of one (then the course may be None)."""
     course, levels, cur = None, [], None
 
     def finish():
@@ -57,17 +70,21 @@ def parse(path):
             rows += ['.' * COLS] * (ROWS - len(rows))
             levels.append((name, tile, [[key[ch] for ch in row] for row in rows]))
 
-    for n, raw in enumerate(open(path, encoding='utf-8'), 1):
+    for n, raw in enumerate(lines, 1):
         line = raw.split(';', 1)[0].rstrip()
         if not line.strip():
             continue
         words = line.split()
         if words[0] == 'course':
-            course = words[1]
+            course = ' '.join(words[1:])
         elif words[0] == 'level':
             finish()
-            tile = int(words[words.index('tile') + 1]) if 'tile' in words else 0
-            cur = (words[1], tile, dict(DEFAULT_KEY), [], n)
+            name, tile = level_line(words)
+            cur = (name, tile, dict(DEFAULT_KEY), [], n)
+        elif words[0] == 'use':
+            finish()
+            cur = None
+            levels.append((' '.join(words[1:]), None, None))
         elif words[0] == 'key':
             for item in words[1:]:
                 ch, code = item.split('=')
@@ -78,9 +95,14 @@ def parse(path):
                 raise SystemExit(f'{path}:{n}: not a row of {COLS} known cells: {row!r}')
             cur[3].append(row)
     finish()
-    if not course:
-        raise SystemExit(f'{path}: no course line')
     return course, levels
+
+
+def level_line(words):
+    """`level <name> [tile N]` → (name, tile)."""
+    if len(words) >= 4 and words[-2] == 'tile':
+        return ' '.join(words[1:-2]), int(words[-1])
+    return ' '.join(words[1:]), 0
 
 
 def reachable(grid, wall):
@@ -110,6 +132,13 @@ def check(name, grid):
     seen = reachable(grid, lambda k, a: a == IRON or (k == 11 and a != MOVE))
     behind = [t for t in targets if t not in seen]
     return [], [f'{name}: {len(behind)} counting stones only reachable through BeBacks'] if behind else []
+
+
+def level_grid(b):
+    """A .lev file's bytes → (grid, tile); the inverse of level_bytes."""
+    if len(b) != LEVEL_SIZE:
+        raise ValueError(f'a level has {LEVEL_SIZE} bytes, not {len(b)}')
+    return [[(b[c * ROWS * 2 + r * 2], b[c * ROWS * 2 + r * 2 + 1]) for c in range(COLS)] for r in range(ROWS)], b[-1]
 
 
 def level_bytes(grid, tile):
@@ -163,42 +192,80 @@ def preview(course, levels, data, out):
     sheet.save(os.path.join(out, course + '.png'))
 
 
-def build(src, data, preview_dir=None, original=None):
-    taken = {f.lower() for f in os.listdir(os.path.join(original, 'Levels'))} if original else set()
+def build(src, data, preview_dir=None, original=None, strict=True):
+    """Builds every course source. Returns the problems and notes; with `strict`, problems end the program (after
+    everything was written)."""
+    taken = {f.lower(): f for f in os.listdir(os.path.join(original, 'Levels'))} if original else {}
     manifest_path = os.path.join(data, 'data.json')
     manifest = json.load(open(manifest_path))
-    problems, notes, written = [], [], set()
+    problems, notes, defined, courses = [], [], {}, []
     for fn in sorted(os.listdir(src)):
         if not fn.endswith('.txt'):
             continue
         course, levels = parse(os.path.join(src, fn))
+        if any(c.lower() == course.lower() for _, c, _ in courses):
+            raise SystemExit(f'{fn}: course {course} twice')
+        for name, tile, grid in levels:
+            file = name + '.lev'
+            if grid is None:
+                continue
+            if file.lower() in taken:
+                raise SystemExit(f'{fn}: {file} is the name of one of the original levels')
+            if file.lower() in defined:
+                raise SystemExit(f'{fn}: {file} twice')
+            defined[file.lower()] = (file, tile, grid)
+        courses.append((fn, course, levels))
+    for file, tile, grid in defined.values():
+        errors, info = check(file, grid)
+        problems += errors
+        notes += info
+        open(os.path.join(data, 'levels', file), 'wb').write(level_bytes(grid, tile))
+        if file not in manifest['levels']:
+            manifest['levels'].append(file)
+    built = set()
+    for fn, course, levels in courses:
         files = []
         for name, tile, grid in levels:
             file = name + '.lev'
-            if file.lower() in taken:
-                raise SystemExit(f'{fn}: {file} is the name of one of the original levels')
-            if file.lower() in written:
-                raise SystemExit(f'{fn}: {file} twice')
-            written.add(file.lower())
-            errors, info = check(file, grid)
-            problems += errors
-            notes += info
-            open(os.path.join(data, 'levels', file), 'wb').write(level_bytes(grid, tile))
+            if grid is None:  # a use line: the file's own spelling
+                if file.lower() in defined:
+                    file = defined[file.lower()][0]
+                elif file.lower() in taken:
+                    file = taken[file.lower()]
+                else:
+                    raise SystemExit(f'{fn}: use {name}: no such level')
             files.append(file)
-            if file not in manifest['levels']:
-                manifest['levels'].append(file)
         open(os.path.join(data, course + '.cse'), 'wb').write(course_bytes(files))
+        built.add(course + '.cse')
         if course + '.cse' not in manifest['courses']:
             manifest['courses'].append(course + '.cse')
         if preview_dir:
-            preview(course, levels, data, preview_dir)
+            preview(course, [resolve(data, name, tile, grid) for name, tile, grid in levels], data, preview_dir)
         print(f'{course}: {len(files)} levels')
+    if original:  # what the sources no longer have
+        gone = [f for f in manifest['levels'] if f.lower() not in taken and f.lower() not in defined]
+        for f in gone:
+            os.remove(os.path.join(data, 'levels', f))
+        cses = {f.lower() for f in os.listdir(original) if f.lower().endswith('.cse')}
+        old = [f for f in manifest['courses'] if f.lower() not in cses and f not in built]
+        for f in old:
+            os.remove(os.path.join(data, f))
+        manifest['levels'] = [f for f in manifest['levels'] if f not in gone]
+        manifest['courses'] = [f for f in manifest['courses'] if f not in old]
     print('\n'.join(f'note: {n}' for n in notes))
-    if problems:
-        raise SystemExit('\n'.join(problems))
     manifest['levels'].sort(key=str.lower)
     manifest['courses'].sort(key=str.lower)
     json.dump(manifest, open(manifest_path, 'w'), indent=1)
+    if problems and strict:
+        raise SystemExit('\n'.join(problems))
+    return problems, notes
+
+
+def resolve(data, name, tile, grid):
+    """A course entry with its grid (a `use` line's from the built or exported .lev)."""
+    if grid is None:
+        grid, tile = level_grid(open(os.path.join(data, 'levels', name + '.lev'), 'rb').read())
+    return name, tile, grid
 
 
 if __name__ == '__main__':

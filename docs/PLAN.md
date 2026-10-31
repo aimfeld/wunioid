@@ -289,6 +289,17 @@ User (session 10): the editors didn't work in the remake (they were view only); 
   scaled). Remastered draws its own (`attrLabel` in `render/remastered/assets.ts`, after the font loads): a dark
   glass pill with a rim and the name in the attribute's colour (Bonus gold, Move cyan, Hike green, Iron steel),
   24 × 9 on the stones (so the stone shows round it) and 31 × 15 in the palette, whose brush mark hugs the pill.
+- [x] User (2026-10-31): edit the shipped courses in the editor. In `npm run dev` the Remastered editor's Save
+  writes the course sources (`courses/*.txt`) and builds them into `public/data` (`src/devSave.ts` → a dev-only
+  endpoint in `vite.config.ts` → `tools/save_course.py`), ready to commit and ship; the live site still saves to
+  `localStorage`. Changed levels get a new grid in whichever source defines them (the `level` line and comments
+  stay), a renamed level keeps its block, a level taken out goes (or moves to a course that `use`s it). New
+  `use <level>` line in the course sources: a level defined in another course, or an original one. The original
+  levels and courses can't change (refused: rename or Save as). Unwinnable levels are saved and reported. In dev,
+  stored levels and courses don't hide the shipped ones. Classic's Save as still writes `localStorage` only.
+  `build_courses.py` now removes the outputs of levels and courses gone from the sources. Tests:
+  `test/saveCourse.test.ts`; `courses.test.ts` and `autoplay.test.ts` take the courses from `courses/*.txt` (no
+  fixed count of 20 any more).
 - [ ] **User:** try both editors (Classic and Remastered), on desktop and on a phone (landscape is the better way
   to edit on a phone: in portrait the whole 640 × 480 picture is small).
 - [ ] Maybe: delete the player's own files (and restore a shipped one); a hover mark in the Remastered palette;
@@ -307,7 +318,7 @@ weeds out the weak ones.
 - [x] `test/autoplay.test.ts` (`AUTOPLAY=1 npx vitest run test/autoplay.test.ts --silent=false`, or
   `AUTOPLAY=Inferno` for one course): plays every level three times with an autopilot (aims at the landing spot,
   random paddle offset) and endless lives; reports the median time and balls lost, fails a level no run finishes.
-  All 60 finish in all runs. `test/courses.test.ts` (always): each course has its 20 levels, all with stones.
+  All 60 finish in all runs. `test/courses.test.ts` (always): each course's levels are there, all with stones.
 - Learned on the way (design rules): a room closed by Iron with nothing breakable in it can hold a ball in an
   endless bounce (soft lock): mazes and cages use Granit inside. Two staggered rows of stones one empty row apart
   act as a wall. A 1-row (15 px) pocket or a gap the ball has to enter sideways is nearly unreachable. Nothing
@@ -315,7 +326,8 @@ weeds out the weak ones.
   1-wide shaft with walls at its ends makes an elevator, and a lone Hike stone circles the field's edge clockwise.
 - [x] The settings' default course was `'default'` (no `.cse`) and only worked as the first name in sort order;
   now `'default.cse'`, so the new courses don't take its place for a new player.
-- [ ] **User:** play-test the 60 levels and drop or change the weak ones (edit `courses/*.txt`, `npm run data`).
+- [ ] **User:** play-test the 60 levels and drop or change the weak ones (edit `courses/*.txt` and `npm run data`,
+  or the editor in `npm run dev`, whose Save writes the sources).
   Slow for the autopilot (> 10 min): Castle, Impostors, Chomp, Labyrinth, Gauntlet. Many balls lost: Jellyfish,
   Asteroids, Cerberus, Gauntlet.
 - [ ] Decide the order of the courses in the menu (now by name: Contraptions, default, Inferno, Mystery,

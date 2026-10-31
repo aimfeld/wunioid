@@ -5,10 +5,25 @@
 import { emptyLevel, type Level } from './sim/files';
 import { LEAVE_ONE_LEVEL, type Files } from './sim/world';
 
-/** Where a save writes (main.ts: the files, and the player's storage). */
+/** What a save writes. */
+export interface Saving {
+  course: string;
+  /** The level file names in play order. */
+  entries: string[];
+  /** A copy of each entry's level. */
+  levels: Map<string, Level>;
+  /** The levels new or changed since they were read. */
+  changed: string[];
+  /** Renamed levels: the new name → the file it was read from. */
+  renamed: Map<string, string>;
+}
+
+/**
+ * Where a save writes (main.ts: the player's storage; in `npm run dev` the course sources, devSave.ts). Returns the
+ * problems to show (a level that can't be won), if any; throws if nothing was saved.
+ */
 export interface ProjectStore {
-  level(name: string, level: Level): void;
-  course(name: string, levels: string[]): void;
+  save(s: Saving): void | Promise<string[]>;
 }
 
 const same = (a: ArrayLike<number> | undefined, b: ArrayLike<number> | undefined) =>
@@ -28,6 +43,8 @@ export class EditorProject {
   /** The entry being edited. */
   current = 0;
   private readonly work = new Map<string, Level>();
+  /** Renamed since read: the name → the file it was read from. */
+  private readonly renamed = new Map<string, string>();
 
   constructor(private readonly files: Files, private readonly store: ProjectStore) {}
 
@@ -37,6 +54,7 @@ export class EditorProject {
     if (!levels) throw new Error(`no course ${course}`);
     this.name = course;
     this.work.clear();
+    this.renamed.clear();
     this.entries = levels.filter((l) => this.files.levels.has(l));
     for (const l of this.entries) this.work.set(l, new Uint8Array(this.files.levels.get(l)!));
     this.current = 0;
@@ -47,6 +65,7 @@ export class EditorProject {
   newCourse(): void {
     this.name = null;
     this.work.clear();
+    this.renamed.clear();
     this.entries = [];
     this.addNew();
   }
@@ -149,22 +168,27 @@ export class EditorProject {
     const shared = this.entries.includes(old);
     this.work.set(name, shared ? new Uint8Array(level) : level);
     if (!shared) this.work.delete(old);
+    const from = this.renamed.get(old) ?? old;
+    if (!shared) this.renamed.delete(old);
+    if (this.files.levels.has(from)) this.renamed.set(name, from);
     return null;
   }
 
-  /** The changed levels and the course, under `as` if given (Save course as; a new course needs a name). */
-  save(as?: string): void {
+  /**
+   * The changed levels and the course, under `as` if given (Save course as; a new course needs a name). The
+   * problems the store found; throws if it saved nothing.
+   */
+  async save(as?: string): Promise<string[]> {
     const name = as ?? this.name;
     if (!name) throw new Error('a new course needs a name');
-    for (const l of new Set(this.entries)) {
-      const level = this.work.get(l)!;
-      if (same(level, this.files.levels.get(l))) continue;
-      const copy = new Uint8Array(level);
-      this.files.levels.set(l, copy);
-      this.store.level(l, copy);
-    }
+    const entries = [...this.entries];
+    const levels = new Map(entries.map((l) => [l, new Uint8Array(this.work.get(l)!)]));
+    const changed = [...levels.keys()].filter((l) => !same(levels.get(l), this.files.levels.get(l)));
+    const problems = await this.store.save({ course: name, entries, levels, changed, renamed: new Map(this.renamed) }) ?? [];
+    for (const l of changed) this.files.levels.set(l, levels.get(l)!);
     this.name = name;
-    this.files.courses.set(name, [...this.entries]);
-    this.store.course(name, this.entries);
+    this.files.courses.set(name, entries);
+    this.renamed.clear();
+    return problems;
   }
 }

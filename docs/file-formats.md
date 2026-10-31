@@ -30,7 +30,9 @@ Loaded from the game directory (`LoadCourse` 0x41c898), saved by the course edit
 entries whose file doesn't exist in `Levels\` are dropped from the list.
 
 **The remake's own courses** are written as text (`courses/*.txt`: one course per file, each level a 13 × 17
-grid of letters) and compiled to these formats by `tools/build_courses.py`; the letters are in its docstring.
+grid of letters, or a `use` line for a level defined elsewhere) and compiled to these formats by
+`tools/build_courses.py`; the format and letters are in its docstring. In `npm run dev` the Remastered editor's
+Save writes them (`tools/save_course.py`).
 
 **In the remake** (`game/src/storage.ts`): the player's levels, courses and high scores are kept in
 `localStorage` in these same formats, base64, under `wunioid.level.<file>`, `wunioid.course.<file>` and

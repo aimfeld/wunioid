@@ -39,6 +39,8 @@ Update them at the end of each piece of work, not only at session end.
 - Dark Planet's stack and layout. `src/sim/` is a procedure-by-procedure port: keep each function's original
   address in its doc comment and the original's order of operations, quirks included (list indexing, NormAngle).
 - Check changes with `npm test` and, for the picture, `node tools/screenshot.mjs <dir> [steps]` (headless Chrome).
+- The remake's courses live in `courses/*.txt` (built by `npm run data`). In `npm run dev` the Remastered editor's
+  Save writes them too (`tools/save_course.py`); the live site saves to `localStorage`.
 
 ## Running the original
 - Wine 9.0, prefix `~/.local/share/wineprefixes/wunioid`. The game switches to a fullscreen mode; Wine can't do

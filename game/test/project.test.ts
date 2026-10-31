@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanName, EditorProject } from '../src/editorProject';
+import { cleanName, EditorProject, type Saving } from '../src/editorProject';
 import { cellOffset, emptyLevel, type Level } from '../src/sim/files';
 import { LEAVE_ONE_LEVEL, type Files } from '../src/sim/world';
 
@@ -18,10 +18,13 @@ function files(): Files {
 
 function project() {
   const f = files();
-  const saved = { levels: new Map<string, Level>(), courses: new Map<string, string[]>() };
+  const saved = { levels: new Map<string, Level>(), courses: new Map<string, string[]>(), last: null as Saving | null };
   const p = new EditorProject(f, {
-    level: (n, l) => saved.levels.set(n, l),
-    course: (n, l) => saved.courses.set(n, [...l]),
+    save: (s) => {
+      for (const l of s.changed) saved.levels.set(l, s.levels.get(l)!);
+      saved.courses.set(s.course, s.entries);
+      saved.last = s;
+    },
   });
   return { p, f, saved };
 }
@@ -35,14 +38,14 @@ describe('editor project', () => {
     expect([p.name, p.entries, p.current, p.courseDirty]).toEqual(['Two.cse', ['A.lev', 'B.lev'], 0, true]);
   });
 
-  it('edits working copies: the files change only on save, and only the changed levels are written', () => {
+  it('edits working copies: the files change only on save, and only the changed levels are written', async () => {
     const { p, f, saved } = project();
     p.open('Two.cse');
     p.select(1);
     p.level[cellOffset(2, 2)] = 7;
     expect(f.levels.get('B.lev')![cellOffset(2, 2)]).toBe(0);
     expect([p.levelDirty(0), p.levelDirty(1), p.dirty]).toEqual([false, true, true]);
-    p.save();
+    expect(await p.save()).toEqual([]);
     expect(f.levels.get('B.lev')![cellOffset(2, 2)]).toBe(7);
     expect([...saved.levels.keys()]).toEqual(['B.lev']);
     expect(saved.courses.get('Two.cse')).toEqual(['A.lev', 'B.lev']);
@@ -82,8 +85,8 @@ describe('editor project', () => {
     expect(p.remove(0)).toBe(LEAVE_ONE_LEVEL);
   });
 
-  it('renames an entry to a free name (the buffer goes along unless another entry shares it)', () => {
-    const { p, f } = project();
+  it('renames an entry to a free name (the buffer goes along unless another entry shares it)', async () => {
+    const { p, f, saved } = project();
     p.open('Two.cse');
     const a = p.level;
     expect(p.rename(0, 'B')).toMatch(/already/);
@@ -92,25 +95,44 @@ describe('editor project', () => {
     expect(p.entries).toEqual(['New one.lev', 'B.lev']);
     expect(p.level).toBe(a);
     expect(p.levelDirty(0)).toBe(true);
-    p.save();
-    expect(f.levels.has('New one.lev') && f.levels.has('A.lev')).toBe(true);
+    p.rename(0, 'Newer');
+    await p.save();
+    expect(f.levels.has('Newer.lev') && f.levels.has('A.lev')).toBe(true);
+    expect(saved.last!.renamed).toEqual(new Map([['Newer.lev', 'A.lev']])); // the file it was read from
+    p.rename(1, 'C2');
+    await p.save();
+    expect(saved.last!.renamed).toEqual(new Map([['C2.lev', 'B.lev']])); // only since the last save
 
     p.open('Twice.cse');
     p.rename(1, 'Other');
     expect(p.levelOf(1)).not.toBe(p.levelOf(0));
   });
 
-  it('a new course needs a name to save, and Save as writes the course under another name', () => {
+  it('a new course needs a name to save, and Save as writes the course under another name', async () => {
     const { p, f } = project();
     p.newCourse();
     expect([p.name, p.entries, p.dirty]).toEqual([null, ['Level2.lev'], true]);
-    expect(() => p.save()).toThrow();
-    p.save('Mine.cse');
+    await expect(p.save()).rejects.toThrow();
+    await p.save('Mine.cse');
     expect([p.name, f.courses.get('Mine.cse'), p.dirty]).toEqual(['Mine.cse', ['Level2.lev'], false]);
     p.open('Two.cse');
-    p.save('Copy.cse');
+    await p.save('Copy.cse');
     expect([p.name, f.courses.get('Copy.cse'), f.courses.get('Two.cse')]).toEqual(['Copy.cse', ['A.lev', 'B.lev'],
       ['A.lev', 'B.lev', 'Gone.lev']]);
+  });
+
+  it('a failed save changes nothing; the problems a store finds come back', async () => {
+    const f = files();
+    let answer: () => Promise<string[]> = () => Promise.reject(new Error('no'));
+    const p = new EditorProject(f, { save: () => answer() });
+    p.open('Two.cse');
+    p.level[cellOffset(2, 2)] = 7;
+    p.rename(0, 'Z');
+    await expect(p.save('Other.cse')).rejects.toThrow('no');
+    expect([p.name, f.courses.has('Other.cse'), f.levels.has('Z.lev'), p.dirty]).toEqual(['Two.cse', false, false, true]);
+    answer = () => Promise.resolve(['Z.lev: no counting stones']);
+    expect(await p.save()).toEqual(['Z.lev: no counting stones']);
+    expect([f.courses.get('Two.cse'), p.dirty]).toEqual([['Z.lev', 'B.lev'], false]);
   });
 
   it('cleans file names', () => {

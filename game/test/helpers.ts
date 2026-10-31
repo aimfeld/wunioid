@@ -1,6 +1,6 @@
 // Test helpers: the exported data from public/data, and worlds built on it.
 
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { loadGameData, type GameData } from '../src/data';
 import { cellOffset, emptyLevel } from '../src/sim/files';
 import { NO_INPUT, World, type Input } from '../src/sim/world';
@@ -37,6 +37,13 @@ export function ticks(w: World, n: number, input: Input = NO_INPUT): void {
 }
 
 export const press = (keys: Partial<Input>): Input => ({ ...NO_INPUT, ...keys });
+
+/** The remake's own courses: the `course` line of each courses/*.txt, as course file names. */
+export function remakeCourses(): string[] {
+  const dir = new URL('../../courses/', import.meta.url);
+  return readdirSync(dir).filter((f) => f.endsWith('.txt')).sort()
+    .map((f) => readFileSync(new URL(f, dir), 'utf8').match(/^course (.+?)\s*$/m)![1] + '.cse');
+}
 
 /** A level buffer with the given stones (col, row 1-based). */
 export function makeLevel(stones: [col: number, row: number, kind: number, attr?: number][], tile = 0): Uint8Array {

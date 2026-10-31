@@ -5,6 +5,7 @@
 import { Music, VOLUMES, type Wanted } from './audio/music';
 import { createAudioContext, Sfx } from './audio/sfx';
 import { loadGameData } from './data';
+import { sourceStore } from './devSave';
 import { EditorProject } from './editorProject';
 import { toggleFullscreen } from './input/fullscreen';
 import { Gamepad } from './input/gamepad';
@@ -21,10 +22,10 @@ import { Thumbnails } from './render/thumbnail';
 import { loadSettings, saveSettings } from './settings';
 import { highScoreFile, writeCourse } from './sim/files';
 import { GameState, NO_NAME, World, type Input } from './sim/world';
-import { download, importFiles, loadStoredFiles, sortedNames, storeCourse, storeLevel, storeScores } from './storage';
+import { download, importFiles, loadStoredFiles, playerStore, sortedNames, storeCourse, storeLevel, storeScores } from './storage';
 import { courseEditor, fileDialog, inputBox, menuBar } from './ui/dialogs';
 import { EditorPanel } from './ui/editorPanel';
-import { Menu } from './ui/menu';
+import { Menu, notSaved } from './ui/menu';
 
 const TICK_MS = 22; // decision 6: the DXTimer's interval, 1000/22 ≈ 45.45 ticks per second
 const MAX_TICKS_PER_FRAME = 8; // after a stall, catch up at most this much
@@ -140,7 +141,7 @@ async function main(): Promise<void> {
     json: async (name) => (await fetch(base + name)).json(),
     binary: async (name) => (await fetch(base + name)).arrayBuffer(),
   });
-  loadStoredFiles(data.files);
+  loadStoredFiles(data.files, import.meta.env.DEV);
   const courseNames = () => sortedNames(data.files.courses.keys());
   const levelNames = () => sortedNames(data.files.levels.keys());
   const settings = loadSettings();
@@ -264,7 +265,7 @@ async function main(): Promise<void> {
   /** The course being edited; the first time, the course chosen for Play. */
   const theProject = () => {
     if (!project) {
-      project = new EditorProject(data.files, { level: storeLevel, course: storeCourse });
+      project = new EditorProject(data.files, import.meta.env.DEV ? sourceStore : playerStore);
       project.open(settings.course);
     }
     return project;
@@ -275,17 +276,21 @@ async function main(): Promise<void> {
     world.level = theProject().level;
     go(GameState.Editor);
   };
-  /** Save the project; a new course asks for its name first. False if cancelled. */
-  const saveProject = async (): Promise<boolean> => {
+  /** Save the project; a new course asks for its name first. The problems found, or null if cancelled. */
+  const saveProject = async (): Promise<string[] | null> => {
     const p = theProject();
     const name = p.name ?? await menu.pickFile({ title: 'Save course as', save: true, ext: 'cse', value: '' });
-    if (!name) return false;
-    p.save(name);
-    return true;
+    if (!name) return null;
+    return p.save(name);
   };
   /** Save, then a game of the course from its first level (with its high scores). */
   const playProject = async () => {
-    if (!(await saveProject())) return;
+    try {
+      if (!(await saveProject())) return;
+    } catch (e) {
+      panel.say(notSaved(e));
+      return;
+    }
     const name = theProject().name!;
     settings.course = name;
     saveSettings(settings);
@@ -337,9 +342,10 @@ async function main(): Promise<void> {
         panel.render();
         editProject();
       },
-      saveCourseAs: (name) => {
-        theProject().save(name);
+      saveCourseAs: async (name) => {
+        const problems = await theProject().save(name);
         panel.render();
+        return problems;
       },
       levels: levelNames,
       courses: courseNames,

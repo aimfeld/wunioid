@@ -42,7 +42,8 @@ export interface EditorHost {
   dirty(): boolean;
   newCourse(): void;
   openCourse(name: string): void;
-  saveCourseAs(name: string): void;
+  /** The problems found; throws if not saved. */
+  saveCourseAs(name: string): Promise<string[]>;
   levels(): string[];
   courses(): string[];
   importFiles(files: File[]): Promise<{ names: string[]; errors: string[] }>;
@@ -70,6 +71,11 @@ export const courseTitle = (file: string) => {
   const n = file.replace(/\.cse$/i, '');
   return n.charAt(0).toUpperCase() + n.slice(1);
 };
+
+/** After a save: what was done, and the problems found (a level that can't be won). */
+export const savedText = (done: string, problems: string[]) => problems.length ? `${done}, but: ${problems.join(' ')}` : done;
+/** A save that failed. */
+export const notSaved = (e: unknown) => `Not saved: ${e instanceof Error ? e.message : e}`;
 
 /** remaster/title-wave.webp: its frames (stacked), one frame's size in px, and the loop's length in seconds, the
  *  banners' wave: 8 frames at 0.4 frames per 22 ms tick (remasteredView.ts, ANIM_PER_TICK). */
@@ -345,9 +351,13 @@ export class Menu {
         this.host.resume();
       })),
       this.button('Save course as…', () => this.chooseFile({ title: 'Save course as', save: true, ext: 'cse', value: name ?? '' }, (n) => {
-        e.saveCourseAs(n);
-        this.render('editor');
-        this.say(`Saved as ${courseTitle(n)}`, true);
+        e.saveCourseAs(n).then((problems) => {
+          this.render('editor');
+          this.say(savedText(`Saved as ${courseTitle(n)}`, problems), problems.length === 0);
+        }, (err: unknown) => {
+          this.render('editor');
+          this.say(notSaved(err));
+        });
       })));
     const picker = this.importPicker((r) => {
       this.render('editor');

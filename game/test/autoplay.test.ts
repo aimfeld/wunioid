@@ -6,9 +6,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Ball } from '../src/sim/sprites';
 import type { World } from '../src/sim/world';
-import { gameData, press, testGame } from './helpers';
+import { gameData, press, remakeCourses, testGame } from './helpers';
 
-const COURSES = ['Postcards.cse', 'Contraptions.cse', 'Inferno.cse'];
+const COURSES = remakeCourses();
 const LIMIT = 60000; // ticks, 22 min of play
 const STALL = 9000; // ticks without a score
 

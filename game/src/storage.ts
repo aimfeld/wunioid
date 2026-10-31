@@ -2,6 +2,7 @@
 // the levels and courses made in the editors. The original writes them next to the EXE (Levels\ for the levels);
 // here they go over the shipped files of the same name. Files can also be imported and downloaded.
 
+import type { ProjectStore } from './editorProject';
 import { parseCourse, parseHighScores, parseLevel, writeCourse, writeHighScores, type HighScore, type Level } from './sim/files';
 import type { Files } from './sim/world';
 
@@ -9,7 +10,7 @@ const SCORES_KEY = 'wunioid.scores.'; // + the high-score file name (defaultscr)
 const LEVEL_KEY = 'wunioid.level.'; // + the level file name (Hi.lev)
 const COURSE_KEY = 'wunioid.course.'; // + the course file name (default.cse)
 
-const encode = (b: Uint8Array) => btoa(String.fromCharCode(...b));
+export const encode = (b: Uint8Array) => btoa(String.fromCharCode(...b));
 const decode = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
 function get(key: string): Uint8Array | null {
@@ -37,9 +38,13 @@ function keys(prefix: string): string[] {
   }
 }
 
-/** The stored levels, courses and high scores over the shipped files. */
-export function loadStoredFiles(files: Files): void {
+/**
+ * The stored levels, courses and high scores over the shipped files; with `keepShipped` (`npm run dev`, where the
+ * editor saves into the shipped files), only the levels and courses that aren't shipped.
+ */
+export function loadStoredFiles(files: Files, keepShipped = false): void {
   for (const k of keys(LEVEL_KEY)) {
+    if (keepShipped && files.levels.has(k.slice(LEVEL_KEY.length))) continue;
     try {
       files.levels.set(k.slice(LEVEL_KEY.length), parseLevel(get(k)!));
     } catch (e) {
@@ -47,6 +52,7 @@ export function loadStoredFiles(files: Files): void {
     }
   }
   for (const k of keys(COURSE_KEY)) {
+    if (keepShipped && files.courses.has(k.slice(COURSE_KEY.length))) continue;
     try {
       files.courses.set(k.slice(COURSE_KEY.length), parseCourse(get(k)!));
     } catch (e) {
@@ -65,6 +71,14 @@ export function loadStoredFiles(files: Files): void {
 export const storeScores = (file: string, scores: HighScore[]) => put(SCORES_KEY + file, writeHighScores(scores));
 export const storeLevel = (name: string, level: Level) => put(LEVEL_KEY + name, level);
 export const storeCourse = (name: string, levels: string[]) => put(COURSE_KEY + name, writeCourse(levels));
+
+/** The Remastered editor's saves, into the storage. */
+export const playerStore: ProjectStore = {
+  save(s) {
+    for (const l of s.changed) storeLevel(l, s.levels.get(l)!);
+    storeCourse(s.course, s.entries);
+  },
+};
 
 /** File names sorted as a file dialog lists them. */
 export const sortedNames = (names: Iterable<string>) => [...names].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));

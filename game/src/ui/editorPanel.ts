@@ -6,7 +6,7 @@
 
 import type { EditorProject } from '../editorProject';
 import type { Thumbnails } from '../render/thumbnail';
-import { courseTitle } from './menu';
+import { courseTitle, notSaved, savedText } from './menu';
 
 export interface Rect {
   x: number;
@@ -22,8 +22,8 @@ export interface PanelHost {
   edit(): void;
   /** A level file to add (the menu's file list), or null. */
   pickLevel(): Promise<string | null>;
-  /** Save (a new course asks for its name); false if cancelled. */
-  save(): Promise<boolean>;
+  /** Save (a new course asks for its name): the problems found, or null if cancelled; throws if not saved. */
+  save(): Promise<string[] | null>;
   /** Save and play the course from its first level. */
   play(): void;
   /** Test the level being edited. */
@@ -314,7 +314,12 @@ export class EditorPanel {
   }
 
   private async save(): Promise<void> {
-    if (await this.host.save()) this.say(`Saved ${courseTitle(this.host.project().name!)}`, true);
+    try {
+      const problems = await this.host.save();
+      if (problems) this.say(savedText(`Saved ${courseTitle(this.host.project().name!)}`, problems), problems.length === 0);
+    } catch (e) {
+      this.say(notSaved(e));
+    }
     this.render();
   }
 
