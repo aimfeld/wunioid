@@ -8,15 +8,15 @@ level Midas tile 8
 .............
 ......5......
 vvvvvvvvvvvvv
-vvYvvvvvvvYvv
+5vYv5v5v5vYv5
 bbbbbbbbbbbbb
-bbbbbbYbbbbbb
+4b4b4bYb4b4b4
 ggggggggggggg
-ggYgggggggYgg
+3gYg3g3g3gYg3
 ooooooooooooo
-ooooooYoooooo
+2o2o2oYo2o2o2
 rrrrrrrrrrrrr
-rrYrrr1rrrYrr
+1rYr1r1r1rYr1
 
 level Conveyor tile 1
 ; Parcels (Move gems) ride conveyor belts between Iron end stops and bump into each other.
