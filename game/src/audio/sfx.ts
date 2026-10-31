@@ -2,8 +2,17 @@
 // MaxPlayingCount 0, so DelphiX opens a new buffer when the old ones are busy (TWaveCollectionItem.Play
 // 0x416198): the same sound overlaps itself, without a limit. The waves are 11025 Hz 8-bit mono.
 
-/** No music competes with the effects; this keeps a few overlapping 8-bit samples below clipping. */
+/** Keeps a few overlapping 8-bit samples below clipping; the music (music.ts) sits under it. */
 const GAIN = 0.5;
+
+/** The page's one AudioContext, for the effects and the music. */
+export function createAudioContext(): AudioContext {
+  // iOS puts Web Audio in the "ambient" session, which the ring/silent switch mutes (Dark Planet's music, an
+  // audio element, lifts its effects into "playback"); Safari 16.4+ lets the page ask for "playback" itself.
+  const session = (navigator as { audioSession?: { type: string } }).audioSession;
+  if (session) session.type = 'playback';
+  return new AudioContext();
+}
 
 export class Sfx {
   private readonly out: GainNode;
@@ -14,29 +23,12 @@ export class Sfx {
     this.out.connect(ctx.destination);
   }
 
-  static async load(base: string, names: string[]): Promise<Sfx> {
-    // iOS puts Web Audio in the "ambient" session, which the ring/silent switch mutes (Dark Planet's music, an
-    // audio element, lifts its effects into "playback"); Safari 16.4+ lets the page ask for "playback" itself.
-    const session = (navigator as { audioSession?: { type: string } }).audioSession;
-    if (session) session.type = 'playback';
-    const ctx = new AudioContext();
+  static async load(ctx: AudioContext, base: string, names: string[]): Promise<Sfx> {
     const buffers = await Promise.all(names.map(async (n) => {
       const data = await (await fetch(`${base}sounds/${n}.wav`)).arrayBuffer();
       return [n, await ctx.decodeAudioData(data)] as const;
     }));
     return new Sfx(ctx, new Map(buffers));
-  }
-
-  /** Browsers start audio only after a user gesture; call this from input handlers. */
-  unlock(): void {
-    // iOS has a further state, "interrupted" (a call, the app in the background), that also needs a resume
-    if (this.ctx.state !== 'running' && this.ctx.state !== 'closed') void this.ctx.resume();
-  }
-
-  /** The page is hidden or the game paused: hold the sounds. */
-  setHidden(hidden: boolean): void {
-    if (hidden) void this.ctx.suspend();
-    else this.unlock();
   }
 
   play(names: readonly string[]): void {

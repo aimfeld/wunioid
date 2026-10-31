@@ -9,10 +9,12 @@ export interface Settings {
   course: string;
   /** The name last entered for a high score, offered for the next one. */
   name: string;
+  /** Remastered's music volume: an index into audio/music.ts VOLUMES (0 = off). */
+  music: number;
 }
 
 export function loadSettings(): Settings {
-  const defaults: Settings = { remastered: true, course: 'default.cse', name: '' };
+  const defaults: Settings = { remastered: true, course: 'default.cse', name: '', music: 2 };
   try {
     return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
   } catch {

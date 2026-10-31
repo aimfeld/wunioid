@@ -1,10 +1,11 @@
 // The Remastered menus (the remake; Classic keeps the original's menu bar and dialogs): a title screen to start a
-// course, choose one and see its high scores, switch the graphics and go fullscreen; the pause menu (Esc, ☰ on
-// touch); the high-score name entry with the table after it; and the editor's menu and a file list to open, save,
-// add, import and download levels and courses (the editor itself: ui/editorPanel.ts). HTML over the game,
+// course, choose one and see its high scores, switch the graphics, set the music and go fullscreen; the pause menu
+// (Esc, ☰ on touch); the high-score name entry with the table after it; and the editor's menu and a file list to
+// open, save, add, import and download levels and courses (the editor itself: ui/editorPanel.ts). HTML over the game,
 // in the HUD's look (Comic Neue, the banners' gold, the stones' glossy colours). Mouse, touch, keys (↑ ↓ move,
 // ← → change, Enter / Space choose, Esc back) and gamepad (main.ts calls nav).
 
+import { VOLUME_NAMES, VOLUMES } from '../audio/music';
 import type { HighScore } from '../sim/files';
 
 export interface CourseInfo {
@@ -20,6 +21,9 @@ export interface MenuHost {
   play(): void;
   remastered(): boolean;
   setRemastered(on: boolean): void;
+  /** The music volume (an index into audio/music.ts VOLUMES, 0 = off); absent without music. */
+  music?: () => number;
+  setMusic(v: number): void;
   fullscreen?: () => void;
   isFullscreen(): boolean;
   /** Close the pause menu and go on. */
@@ -462,6 +466,15 @@ export class Menu {
     const course = h.courses().find((c) => c.file === h.course()) ?? h.courses()[0];
     const graphics = () => this.selector(`Graphics: <span class="val">${h.remastered() ? 'Remastered' : 'Classic 1999'}</span>`,
       () => h.setRemastered(!h.remastered()));
+    const music = () => h.music ? this.selector(`Music: <span class="val">${VOLUME_NAMES[h.music()]}</span>`, (d) => {
+      h.setMusic((h.music!() + d + VOLUMES.length) % VOLUMES.length);
+      this.render(s);
+      (this.box.querySelector('[data-music]') as HTMLElement | null)?.focus();
+    }) : null;
+    const withMusic = (b: HTMLButtonElement | null) => {
+      if (b) b.dataset.music = '1';
+      return b;
+    };
     const fullscreen = () => h.fullscreen ? this.button(h.isFullscreen() ? 'Leave fullscreen' : 'Fullscreen', () => h.fullscreen!()) : null;
     switch (s) {
       case 'title': {
@@ -484,6 +497,8 @@ export class Menu {
             this.go('scores');
           }));
         box.append(this.button('Editor', () => h.editor.open()), graphics());
+        const m = withMusic(music());
+        if (m) box.append(m);
         const fs = fullscreen();
         if (fs) box.append(fs);
         const foot = el('div', 'wm-foot');
@@ -552,6 +567,8 @@ export class Menu {
           this.button('Choose course', () => this.go('courses')),
           graphics());
         {
+          const m = withMusic(music());
+          if (m) box.append(m);
           const fs = fullscreen();
           if (fs) box.append(fs);
         }

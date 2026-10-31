@@ -36,7 +36,7 @@ plus syncenv at the attack, decaying with syncdecay; rendered 4x oversampled),
 tri, sine, pluck (a Karplus-Strong string: bright = Hz of the pick, sustain = T60 in s; fixed pitch, no glide,
 arpeggio or vibrato; with hpf, drive and cutoff it is a distorted guitar through a cabinet), drums (kit=electro
 (808/909), hard (a distorted 909-like kick, crisp hats), rock, or break (a funk kit as sampled from vinyl for
-drum'n'bass breaks); gain per letter: k=1 s=0.8 ...; drive = a saturation of the whole kit). Keys of all pitched types: gain, pan (-1..1), octave,
+drum'n'bass breaks); gain per letter: k=1 s=0.8 ...; drive = a saturation of the whole kit, level = gain after it). Keys of all pitched types: gain, pan (-1..1), octave,
 a d s r (attack, decay time constant, sustain level, release; s), voices, detune (cents, spread over the voices),
 spread (stereo width of the voices), vib (cents), vibrate (Hz), vibdelay (s), glide (s), cutoff (Hz; 0 = no
 filter), filter (lp2: 2-pole; ladder: 4-pole like the TB-303's, 24 dB/octave), res (0..1; a ladder
@@ -169,7 +169,7 @@ def parse_song(text):
                 name, typ = args[0], args[1]
                 if typ not in TYPES:
                     raise ValueError(f'unknown instrument type {typ!r}')
-                p = dict(DRUM_GAIN, gain=0.8, echo=0.0, reverb=0.0, drive=0.0, kit='electro') if typ == 'drums' else dict(PITCHED)
+                p = dict(DRUM_GAIN, gain=0.8, echo=0.0, reverb=0.0, drive=0.0, level=1.0, kit='electro') if typ == 'drums' else dict(PITCHED)
                 for a in args[2:]:
                     k, v = a.split('=')
                     if k not in p:
@@ -740,6 +740,7 @@ def render(song, order, solo=(), mute=(), levels=None):
             x = render_drums(inst, events[name], n, kits[style])
             if inst.p['drive']:
                 x = saturate(x, inst.p['drive'])
+            x = x * inst.p['level']
         else:
             x = render_pitched(inst, events[name], n, tick, rng)
             if inst.p['hpf']:

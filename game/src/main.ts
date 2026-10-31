@@ -1,8 +1,9 @@
 // Boot: load the data, run the fixed-tick loop (TForm1.TimerTimer) and draw the picture: Remastered (the default,
 // with its own menus and one editor for a course and its levels) or Classic (the original's picture, menu bar,
-// dialogs and two editors), switchable at any time (R).
+// dialogs and two editors), switchable at any time (R). Remastered has music (audio/music.ts).
 
-import { Sfx } from './audio/sfx';
+import { Music, VOLUMES, type Wanted } from './audio/music';
+import { createAudioContext, Sfx } from './audio/sfx';
 import { loadGameData } from './data';
 import { EditorProject } from './editorProject';
 import { toggleFullscreen } from './input/fullscreen';
@@ -150,13 +151,20 @@ async function main(): Promise<void> {
   if (!data.files.courses.has(settings.course)) settings.course = courseNames()[0];
   const remasterAssets = (images: Parameters<typeof RemasterAssets.load>[1]) =>
     RemasterAssets.load(import.meta.env.BASE_URL, images, data.manifest);
-  const [images, sfx] = await Promise.all([
+  const audio = createAudioContext();
+  const [images, sfx, music] = await Promise.all([
     loadImages(base, data.manifest),
-    Sfx.load(base, data.manifest.sounds).catch((e) => {
+    Sfx.load(audio, base, data.manifest.sounds).catch((e) => {
       console.warn('no sounds:', e);
       return undefined;
     }),
+    Music.load(audio, import.meta.env.BASE_URL + 'music/').catch((e) => {
+      console.warn('no music:', e);
+      return undefined;
+    }),
   ]);
+  if (!(settings.music in VOLUMES)) settings.music = 2;
+  music?.setVolume(VOLUMES[settings.music]);
 
   const world = new World(data.manifest.images, data.files, Date.now() | 0); // Randomize
   world.onHighScores = (file, scores) => {
@@ -190,11 +198,20 @@ async function main(): Promise<void> {
   let touchUsed = window.matchMedia('(pointer: coarse)').matches;
   window.addEventListener('pointerdown', (e) => (touchUsed = e.pointerType !== 'mouse'), { capture: true });
   const pad = new Gamepad();
-  const unlock = () => sfx?.unlock();
+  // Browsers start audio only after a user gesture; iOS has a further state, "interrupted" (a call, the app in the
+  // background), that also needs a resume.
+  const unlock = () => {
+    if (audio.state !== 'running' && audio.state !== 'closed') void audio.resume();
+  };
+  /** The page is hidden or the game paused: hold the effects and the music. */
+  const setHidden = (hidden: boolean) => {
+    if (hidden) void audio.suspend();
+    else unlock();
+  };
   for (const type of ['keydown', 'pointerdown', 'pointerup', 'touchend']) window.addEventListener(type, unlock);
   // for the browser console, and tools that drive the page (`ready` resolves once the game runs)
   if (import.meta.env.DEV) {
-    Object.assign(window, { world, ready: Promise.resolve(), settings });
+    Object.assign(window, { world, ready: Promise.resolve(), settings, music });
     Object.defineProperty(window, 'view', { get: view, configurable: true });
   }
 
@@ -207,13 +224,13 @@ async function main(): Promise<void> {
     (world.state === GameState.Course && world.levelIndex === 0 && world.score === 0));
   const setPaused = (p: boolean) => {
     paused = p;
-    sfx?.setHidden(p || document.hidden);
+    setHidden(p || document.hidden);
   };
   // Timer.ActiveOnly: the original stops while its window is inactive and goes on when it is active again
   document.addEventListener('visibilitychange', () => {
     acc = 0;
     last = performance.now();
-    sfx?.setHidden(document.hidden || paused);
+    setHidden(document.hidden || paused);
   });
 
   const runDialog = async (f: () => Promise<unknown>) => {
@@ -293,6 +310,12 @@ async function main(): Promise<void> {
     play: startCourse,
     remastered: () => settings.remastered,
     setRemastered: (on) => setRemastered(on),
+    music: music ? () => settings.music : undefined,
+    setMusic: (v) => {
+      settings.music = v;
+      saveSettings(settings);
+      music?.setVolume(VOLUMES[v]);
+    },
     fullscreen: document.fullscreenEnabled && !installedFullscreen ? () => void toggleFullscreen().catch(() => undefined) : undefined,
     isFullscreen: () => document.fullscreenElement !== null,
     resume: () => {
@@ -547,6 +570,21 @@ async function main(): Promise<void> {
   }
   applyMode();
 
+  /**
+   * The music (Remastered only, decision 14): the menu track on the title screen, in the menus and the editor;
+   * in a game the level's track, (level − 1) mod N, from its start at each level (and each new game), fading out
+   * at "Well done" and "Game over", held while the pause menu is open.
+   */
+  const musicWanted = (): Wanted => {
+    if (!music || !useRemastered()) return { track: null, key: '', fade: false, hold: false };
+    if (world.state === GameState.Course || world.state === GameState.Test) {
+      const level = world.state === GameState.Test ? (project?.current ?? 0) + 1 : world.levelIndex + 1;
+      return { track: music.levelTrack(level), key: `level ${world.levelStarts}`,
+        fade: world.levelDonePhase || world.gameOver, hold: menu.open || dialog };
+    }
+    return { track: music.playlist.menu, key: 'menu', fade: false, hold: false };
+  };
+
   let second = last, ticksThisSecond = 0, fps = 0; // DXTimer.FrameRate: ticks in the last second
   let padPrev = { up: false, down: false, left: false, right: false, ok: false, back: false, start: false };
   const frame = (now: number) => {
@@ -599,6 +637,7 @@ async function main(): Promise<void> {
       return;
     }
     if (world.state === GameState.CourseEditor && world.courseEditorOpen && !dialog) void openCourseEditor();
+    music?.want(musicWanted());
     const playing = world.state === GameState.Course || world.state === GameState.Test;
     app.canvas.style.cursor = playing && !menu.open ? 'none' : 'default';
     const strip = r ? REMASTERED_STRIP : CLASSIC_STRIP;

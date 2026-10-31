@@ -285,8 +285,9 @@ VERSIONS = [
 ]
 
 
-for v in VERSIONS:
-    path = f'{sys.argv[1]}/menu_liquid{v["no"]}.txt'
-    with open(path, 'w') as f:
-        f.write(song(v))
-    print(path)
+if __name__ == '__main__':
+    for v in VERSIONS:
+        path = f'{sys.argv[1]}/menu_liquid{v["no"]}.txt'
+        with open(path, 'w') as f:
+            f.write(song(v))
+        print(path)

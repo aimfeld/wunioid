@@ -222,14 +222,26 @@ Remastered is the default (user, session 6). First version in place; needs the u
   the hook at half time) with the short roll into the melody ([music.md](music.md)). Synth: `kit=break` (a funk kit
   band-limited like a sampled break), ghost snare `g`, drum-kit `drive`. `tools/music/gen_liquid.py` writes the
   five liquid scores.
-- [ ] **Next:** the full version of the menu track (from `menu_liquid4.txt`, the nod to the original kept).
-- [ ] **Next:** 20 full level-track candidates, the user picks the best: (liquid) drum'n'bass and acid techno with
-  the TB-303 (like `menu_acid1.txt`).
-- [ ] `src/audio/music.ts`: Web Audio buffer loop, menu track / level track (level − 1) mod N (N = tracks
-  picked), fades at level end and game over, silent when paused or in the background, Remastered only; music on/off and volume in the
-  menus; balance against the SFX.
-- [ ] Level tracks: the picked candidates, refined by ear.
-- [ ] Service worker: cache the music best effort, as Dark Planet's media.
+- [x] Session 14: the full version of the menu track, `menu_full.txt` (`tools/music/gen_menu.py`, 2:59, intro 22 s
+  once): a second harmony with a new melody, two hook variations, a harmony voice, flute counter-melodies, a
+  16-bar breakdown, an outro back into the first drop ([music.md](music.md)). Tools: `tools/music/compose.py`
+  (chord symbols and voice leading, a melody notation, a harmony check, mixing by numbers with `--balance` →
+  `tools/music/levels.json`); synth: drum kits got `level`.
+- [x] **User:** keep `menu_full.txt` (session 15).
+- [x] Session 14: 20 level-track candidates, `level_01..20_*.txt` (`tools/music/gen_levels_dnb.py`: 10 drum'n'bass,
+  2:11–2:16; `gen_levels_acid.py`: 10 acid techno with the TB-303, 2:16–2:35), each an intro once and a loop
+  ([music.md](music.md)).
+- [x] **User** (session 15): kept 03, 07, 09, 11, 12, 14, 17, 19, 20 (N = 9) and the full menu track; the
+  others discarded.
+- [x] Session 15: the music in the game ([music.md](music.md), In the game): `tools/music/export_music.py` →
+  `game/public/music/` (MP3s and `music.json` with the loop points); `src/audio/music.ts` (Web Audio loop between
+  the loop points, one track decoded at a time, the effects' AudioContext): the menu track in the menus and the
+  editor, level n's track (n − 1) mod 9 from its start at each level, fades at "Well done" and "Game over",
+  held by the pause menu, Remastered only; a Music selector (Off / Low / Medium / High) in the title and pause
+  menus; `test/music.test.ts`. Service worker: the music in its own cache, best effort.
+- [ ] **User:** check in the game by ear: the music's volume against the effects (Medium = gain 0.25), the loop
+  seams, the fades, Safari/iOS (the MP3 encoder delay is handled by the decoded length, checked in Chrome only).
+- [ ] Level tracks: refine by ear, if needed.
 
 ### Phase 4: Editors and release 🔄 (session 10, 2026-10-25)
 User (session 10): the editors didn't work in the remake (they were view only); wanted in both modes.
@@ -324,5 +336,6 @@ weeds out the weak ones.
 13. Remastered is the default; switch at any time with R or the menus (session 6).
 14. Remastered gets music (session 9): the title/main menu plays an original track that nods to the *Revenge
     of Doh* (DOS) title music; the levels play independent tracks in 1999 game-music style, repeating (6
-    planned; session 13: the user picks N of 20 candidates). Menu track: liquid drum'n'bass (session 13). Made as
+    planned; session 13: the user picks N of 20 candidates; session 15: 9 kept). Menu track: liquid drum'n'bass
+    (session 13), the full version `menu_full.txt` (session 15). Made as
     text scores rendered by a Python synth to MP3 ([music.md](music.md)).

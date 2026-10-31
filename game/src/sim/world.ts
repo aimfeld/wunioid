@@ -74,6 +74,8 @@ export class World {
   levelIndex = 0; // in the course, 0-based
   endCollected = false; // the End capsule (0x4212ec)
   levelDonePhase = false; // "Well done": capsules can't be collected (0x4212f4)
+  /** The remake's: StartLevel calls so far (the music starts a level's track again on each). */
+  levelStarts = 0;
   /** The level editor's brush (0x42111c): a stone kind 1…13, or an attribute 1…4 when `brushAttr`. */
   brush = 1;
   /** The brush is an attribute (0x42111d): picked in the palette's Attribs row. */
@@ -277,6 +279,7 @@ export class World {
     this.createBackground();
     this.endCollected = false;
     this.levelDonePhase = false;
+    this.levelStarts++;
   }
 
   /** TForm1.LoadLevel (0x41b9d8): a file from Levels\ into the level buffer. */
@@ -565,6 +568,11 @@ export class World {
   testLevel(level: Level): void {
     this.level = new Uint8Array(level);
     this.request(GameState.Test);
+  }
+
+  /** The "Game over" banner is up (the remake's music fades out). */
+  get gameOver(): boolean {
+    return this.flow !== null && this.balls.length === 0 && this.lives === 0;
   }
 
   /** True while a PlayTick loop (blocking banner, "Well done") is running. */

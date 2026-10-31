@@ -1,0 +1,84 @@
+{
+ "menu": {
+  "file": "menu.mp3",
+  "title": "Deep Water",
+  "sampleRate": 44100,
+  "length": 7876465,
+  "loopStart": 984558,
+  "loopEnd": 7876465
+ },
+ "levels": [
+  {
+   "file": "brick_breaker.mp3",
+   "title": "Brick Breaker",
+   "sampleRate": 44100,
+   "length": 5839448,
+   "loopStart": 486621,
+   "loopEnd": 5839448
+  },
+  {
+   "file": "acid_rain.mp3",
+   "title": "Acid Rain",
+   "sampleRate": 44100,
+   "length": 6272000,
+   "loopStart": 627200,
+   "loopEnd": 6272000
+  },
+  {
+   "file": "dark_matter.mp3",
+   "title": "Dark Matter",
+   "sampleRate": 44100,
+   "length": 5907349,
+   "loopStart": 492279,
+   "loopEnd": 5907349
+  },
+  {
+   "file": "resonance.mp3",
+   "title": "Resonance",
+   "sampleRate": 44100,
+   "length": 6135652,
+   "loopStart": 613565,
+   "loopEnd": 6135652
+  },
+  {
+   "file": "capsule_rush.mp3",
+   "title": "Capsule Rush",
+   "sampleRate": 44100,
+   "length": 5773091,
+   "loopStart": 481091,
+   "loopEnd": 5773091
+  },
+  {
+   "file": "laser_wall.mp3",
+   "title": "Laser Wall",
+   "sampleRate": 44100,
+   "length": 6048000,
+   "loopStart": 604800,
+   "loopEnd": 6048000
+  },
+  {
+   "file": "molten_core.mp3",
+   "title": "Molten Core",
+   "sampleRate": 44100,
+   "length": 6318806,
+   "loopStart": 631881,
+   "loopEnd": 6318806
+  },
+  {
+   "file": "ricochet.mp3",
+   "title": "Ricochet",
+   "sampleRate": 44100,
+   "length": 6005106,
+   "loopStart": 600511,
+   "loopEnd": 6005106
+  },
+  {
+   "file": "lift_off.mp3",
+   "title": "Lift Off",
+   "sampleRate": 44100,
+   "length": 6848471,
+   "loopStart": 622588,
+   "loopEnd": 6848471
+  }
+ ]
+}

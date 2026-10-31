@@ -83,6 +83,10 @@ kind 1 = GemRed, 2 GemOrange, 3 GemGreen, 4 GemBlue, 5 GemViolet. `tools/extract
   and the title (`title.webp`). The frame is `frame.webp` (the playfield, 428 × 480; alone in the phone's portrait
   picture) and `panel-frame.webp` (its continuation round the HUD panel, x 412–640).
   `game/public/fonts/`: Comic Neue (SIL OFL 1.1, with `OFL.txt`) for the Remastered HUD, menus and banners.
+- `tools/music/` (sessions 9–15, [music.md](music.md)): Remastered's music as text scores (`songs/`), the synth
+  (`synth.py`), the generators (`gen_menu.py`, `gen_levels_dnb.py`, `gen_levels_acid.py`, `gen_liquid.py`; shared
+  `compose.py`, mix levels in `levels.json`) and `export_music.py` → `game/public/music/` (the menu track and 9
+  level tracks as MP3, 28 MB, with `music.json`: the playlist and loop points).
 - `tools/export_game_data.py`: the EXE's image and wave lists, the levels, courses and high scores →
   `game/public/data/` (PNG with alpha, WAV, raw files, `data.json`). `tools/export_icons.py`: the app icons.
 - `courses/*.txt` and `tools/build_courses.py` (session 11): the remake's own three courses (Postcards,

@@ -9,7 +9,7 @@ function walk(dir: string, root = dir): string[] {
     e.isDirectory() ? walk(join(dir, e.name), root) : [relative(root, join(dir, e.name)).split('\\').join('/')]);
 }
 
-/** Writes dist/sw.js (template: sw.js) with the list of built files and a hash of their contents. */
+/** Writes dist/sw.js (template: sw.js) with the lists of built files, core and music, and hashes of their contents. */
 function offlinePlugin(): Plugin {
   let outDir = 'dist';
   return {
@@ -19,10 +19,15 @@ function offlinePlugin(): Plugin {
       outDir = resolve(config.root, config.build.outDir);
     },
     closeBundle() {
-      const core = walk(outDir).filter((f) => f !== 'sw.js').sort();
-      const hash = createHash('sha256');
-      for (const f of core) hash.update(f).update(readFileSync(join(outDir, f)));
-      const build = { core, coreVersion: hash.digest('hex').slice(0, 12) };
+      const files = walk(outDir).filter((f) => f !== 'sw.js').sort();
+      const version = (list: string[]) => {
+        const hash = createHash('sha256');
+        for (const f of list) hash.update(f).update(readFileSync(join(outDir, f)));
+        return hash.digest('hex').slice(0, 12);
+      };
+      const media = files.filter((f) => f.startsWith('music/'));
+      const core = files.filter((f) => !media.includes(f));
+      const build = { core, media, coreVersion: version(core), mediaVersion: version(media) };
       const template = readFileSync(new URL('sw.js', import.meta.url), 'utf8');
       writeFileSync(join(outDir, 'sw.js'), `self.__BUILD__ = ${JSON.stringify(build)};\n${template}`);
     },

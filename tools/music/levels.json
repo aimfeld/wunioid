@@ -1,0 +1,112 @@
+{
+ "level_03_brick_breaker": {
+  "kick": 1.1061,
+  "snare": 1.2172,
+  "hats": 1.4422,
+  "sub": 1.2432,
+  "reese": 1.1126,
+  "acid": 1.3498,
+  "pad": 1.139,
+  "stab": 0.8545,
+  "lead": 0.7129,
+  "body": 0.3975
+ },
+ "level_07_dark_matter": {
+  "kick": 0.9114,
+  "snare": 1.0084,
+  "hats": 1.7215,
+  "sub": 0.9741,
+  "reese": 0.7833,
+  "zap": 1.0667,
+  "hoover": 0.4901,
+  "pad": 1.096,
+  "bell": 1.4456
+ },
+ "level_09_capsule_rush": {
+  "kick": 0.7689,
+  "snare": 0.8069,
+  "hats": 0.9642,
+  "sub": 1.1018,
+  "reese": 1.0199,
+  "acid": 2.0455,
+  "lead": 0.8402,
+  "chip": 0.8194,
+  "pad": 0.8706,
+  "bell": 1.2132
+ },
+ "level_11_acid_rain": {
+  "kick": 0.6853,
+  "perc": 1.5979,
+  "hats": 2.1587,
+  "acid": 0.8857,
+  "sub": 1.3262,
+  "stab": 1.1145,
+  "pad": 0.5533,
+  "lead": 0.8734,
+  "body": 0.6687
+ },
+ "level_12_resonance": {
+  "kick": 0.6979,
+  "perc": 1.629,
+  "hats": 2.21,
+  "acid": 0.9012,
+  "acid2": 0.8471,
+  "sub": 1.3676,
+  "pad": 0.5618,
+  "hoover": 0.6785
+ },
+ "level_14_laser_wall": {
+  "kick": 0.5545,
+  "perc": 1.5623,
+  "hats": 2.148,
+  "acid": 0.846,
+  "sub": 1.2453,
+  "saws": 1.0348,
+  "lead": 0.7633,
+  "body": 0.6457
+ },
+ "level_17_molten_core": {
+  "kick": 0.583,
+  "perc": 1.5618,
+  "hats": 2.251,
+  "acid": 0.8612,
+  "sub": 1.3764,
+  "hoover": 0.67,
+  "pad": 0.6143
+ },
+ "level_19_ricochet": {
+  "kick": 0.6535,
+  "perc": 1.5258,
+  "hats": 2.0957,
+  "acid": 0.8368,
+  "sub": 1.2206,
+  "arp": 0.7846,
+  "lead": 1.1247,
+  "pad": 0.531
+ },
+ "level_20_lift_off": {
+  "kick": 0.6686,
+  "perc": 1.5615,
+  "hats": 2.1186,
+  "acid": 0.9003,
+  "sub": 1.3016,
+  "pad": 0.7912,
+  "bell": 0.9795,
+  "lead": 0.7944,
+  "body": 0.6267
+ },
+ "menu_full": {
+  "kick": 0.9126,
+  "snare": 1.0012,
+  "hats": 1.0442,
+  "sub": 0.9612,
+  "pad": 1.2205,
+  "reese": 1.0345,
+  "harp": 1.1795,
+  "choir": 1.002,
+  "choir2": 0.6832,
+  "bell": 1.0698,
+  "flute": 0.4449,
+  "lflute": 0.7427
+ }
+}
