@@ -199,8 +199,9 @@ def goldie(w=30, h=15):
     return finish(c * edge_dark(d), coverage(d))
 
 
-def clouds(col, frame, frames, seed, w=30, h=15, contrast=0.55):
-    """Eater / Doubler: glossy, with clouds drifting through (periodic, so the loop has no jump)."""
+def clouds(col, frame, frames, seed, w=30, h=15, contrast=0.55, dark=None):
+    """Eater / Doubler: glossy, with clouds drifting through (periodic, so the loop has no jump). The clouds mix
+    `col` with a darker shade of it, or with `dark` (the Doubler's blue, so it doesn't look like the Eater)."""
     x, y, d, z = stone_shape(w, h)
     n = normals(z)
     P = 8  # noise period in lattice cells across the loop
@@ -208,7 +209,10 @@ def clouds(col, frame, frames, seed, w=30, h=15, contrast=0.55):
     cl = fbm(x / 30 * P + shift, y / 30 * P * 0.9, P, 64, seed, 4)
     cl2 = fbm(x / 30 * P - shift, y / 30 * P * 0.9 + 3.3, P, 64, seed + 9, 3)
     v = np.clip(0.5 + (cl * 0.6 + cl2 * 0.4 - 0.5) * 2.2 * contrast, 0, 1)[..., None]
-    base = hexrgb(col) * (0.6 + 0.65 * v)
+    if dark is None:
+        base = hexrgb(col) * (0.6 + 0.65 * v)
+    else:
+        base = hexrgb(dark) * (1 - v) + hexrgb(col) * v
     c = shade(n, base, amb=0.36, dif=0.72, spec=0.7, shin=34, env=0.28)
     return finish(c * edge_dark(d), coverage(d))
 
@@ -650,7 +654,7 @@ def sprites(data):
     out['Goldie'] = [goldie()]
     out['Bubbler'] = [bubbler(f, 11) for f in range(11)]
     out['Eater'] = [clouds('#8c8c8c', f, 10, 21) for f in range(10)]
-    out['Doubler'] = [clouds('#a8a8c8', f, 10, 31) for f in range(10)]
+    out['Doubler'] = [clouds('#e4e8fa', f, 10, 31, dark='#4c6ce8') for f in range(10)]
     out['Killer'] = [killer(f) for f in range(10)]
     for name in CAPSULES:
         out[name] = [capsule(name, f) for f in range(CAPSULE_FRAMES)]

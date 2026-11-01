@@ -181,6 +181,8 @@ Remastered is the default (user, session 6). First version in place; needs the u
   of a glint sweeping across: the original's frames 0 → 5 → 10 brighten the whole stone, its shadowed facets most
   (pulse = sin(π f / 10)^0.5: the light × 1.25 plus a little of the gem's colour); toned down (user) so the cut
   stays visible when fully lit. The view adds a faint halo with the same pulse.
+- [x] Doubler told apart from the Eater (user): lighter (`#e4e8fa`), its clouds mixed with blue (`#4c6ce8`)
+  instead of a darker grey; the Eater keeps its grey clouds. Splinters `0xa4b4f2`. Remastered only.
 - [x] BeBack (the yellow sandstone, 2 hits, returns after 300 ticks) plays `Crunch` when its second hit hides it
   (user, session 7). Remastered only: the original is silent there (TStone.Hit 0x417ff8 hides it without a sound),
   so Classic stays so; `remasteredView.afterTick` adds the sound when a stone it saw visible turns invisible.

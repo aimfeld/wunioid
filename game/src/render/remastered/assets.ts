@@ -234,7 +234,7 @@ export class RemasterAssets {
 export const STONE_COLORS: Record<string, number> = {
   GemRed: 0xf0302a, GemOrange: 0xffb43c, GemGreen: 0x4cc84a, GemBlue: 0x5a56e6, GemViolet: 0xee3ae6,
   Granit: 0xb4b6b8, Block: 0xd6c838, BeBack: 0xdcb428, Goldie: 0xffeaa0, Bubbler: 0x78b0e2, Eater: 0x9a9a9a,
-  Doubler: 0xa8a8c8, Killer: 0xc5525a,
+  Doubler: 0xa4b4f2, Killer: 0xc5525a,
 };
 
 /** The shatter animations' colours, where the stone is not known. */
